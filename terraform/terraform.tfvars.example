@@ -1,0 +1,5 @@
+project_id             = "your-gcp-project-id"
+region                 = "europe-west1"
+my_ip                  = "0.0.0.0/0"
+tf_state_bucket        = "your-tf-state-bucket"
+force_destroy_resource = true
