@@ -1,3 +1,7 @@
+locals {                                                                                                                                                                                        
+    kestra_ip = google_compute_instance.kestra_instance.network_interface[0].access_config[0].nat_ip
+} 
+
 # GCS Data Lake
 output "data_bucket" {
   description = "Name of the GCS bucket where raw ArXiv data is stored"
@@ -24,7 +28,12 @@ output "docker_registry" {
 # Kestra VM
 output "kestra_vm_ip" {
   description = "External IP address of the Kestra orchestration VM"
-  value       = google_compute_instance.kestra_instance.network_interface[0].access_config[0].nat_ip
+  value       = "${local.kestra_ip}"
+}
+
+output "kestra_url" {
+  description = "Full URL to the Kestra UI"
+  value       = "http://${local.kestra_ip}:8080"
 }
 
 # Cloud Run - Streamlit Dashboard

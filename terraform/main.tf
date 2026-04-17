@@ -93,6 +93,38 @@ resource "google_compute_instance" "kestra_instance" {
   metadata_startup_script = file("${path.module}/scripts/startup.sh")
 }
 
+# Kestra setup on VM (Official Kestra Terraform pattern):
+# https://github.com/kestra-io/terraform-deployments/blob/main/gcp/terraform/gcp-aiven/opensource/main.tf
+resource "null_resource" "kestra_deploy" {
+  depends_on = [google_compute_instance.kestra_instance]
+
+  provisioner "file" {
+    source      = "${path.module}/../kestra/docker-compose.yml"
+    destination = "/home/ubuntu/docker-compose.yml"
+
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = file("~/.ssh/id_ed25519")
+      host        = google_compute_instance.kestra_instance.network_interface[0].access_config[0].nat_ip
+    }
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "until sudo docker info > /dev/null 2>&1; do echo 'Waiting for Docker...'; sleep 5; done",
+      "sudo docker compose -f /home/ubuntu/docker-compose.yml up -d"
+    ]
+
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = file("~/.ssh/id_ed25519")
+      host        = google_compute_instance.kestra_instance.network_interface[0].access_config[0].nat_ip
+    }
+  }
+}
+
 # Firewall for access to the orchestration Compute Instance
 resource "google_compute_firewall" "kestra_firewall" {
   name    = "kestra-firewall"

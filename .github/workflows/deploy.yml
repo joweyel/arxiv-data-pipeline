@@ -1,0 +1,71 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'dashboard/**'
+      - 'kestra/**'
+
+env:
+  REGION: ${{ secrets.GCP_REGION }}
+  IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.ARTIFACT_REGISTRY_REPO }}/dashboard:${{ github.sha }}
+
+jobs:
+  # General Deploy steps on GCP
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: GCP Authentication
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          token_format: access_token
+
+      - name: Docker login to Artifact Registry
+        uses: docker/login-action@v3
+        with:
+          username: oauth2accesstoken
+          password: ${{ steps.auth.outputs.access_token }}
+          registry: ${{ secrets.GCP_REGION }}-docker.pkg.dev
+
+      - name: Build and push Docker Container
+        run: |
+          docker build -t ${{ env.IMAGE }} ./dashboard
+          docker push ${{ env.IMAGE }}
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ secrets.CLOUD_RUN_SERVICE_NAME }}
+          region: ${{ secrets.GCP_REGION }}
+          image: ${{ env.IMAGE }}
+
+      - name: Show deployed URL
+        run: echo "Dashboard deployed to ${{ steps.deploy.outputs.url }}"
+
+  # Kestra-related deploy steps (https://github.com/kestra-io/deploy-action)
+  deploy-kestra-flows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate flows
+        uses: kestra-io/github-actions/validate-flows@main
+        with:
+          directory: ./kestra/flows
+          server: http://${{ secrets.KESTRA_HOSTNAME }}:8080
+
+      - name: Deploy flows
+        uses: kestra-io/github-actions/deploy-flows@main
+        with:
+          namespace: arxiv
+          directory: ./kestra/flows 
+          server: http://${{ secrets.KESTRA_HOSTNAME }}:8080
+          user: ${{ secrets.KESTRA_USERNAME }}
+          password: ${{ secrets.KESTRA_PASSWORD }}
