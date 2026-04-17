@@ -1,26 +1,36 @@
 name: Deploy
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'dashboard/**'
-      - 'kestra/**'
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
 
 env:
   REGION: ${{ secrets.GCP_REGION }}
-  IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.ARTIFACT_REGISTRY_REPO }}/dashboard:${{ github.sha }}
+  IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.ARTIFACT_REGISTRY_REPO }}/dashboard:${{ github.event.workflow_run.head_sha }}
 
 jobs:
-  # General Deploy steps on GCP
   deploy:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Check changed paths
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          filters: |
+            dashboard:
+              - 'dashboard/**'
 
       - name: GCP Authentication
+        if: steps.changes.outputs.dashboard == 'true'
         id: auth
         uses: google-github-actions/auth@v2
         with:
@@ -28,6 +38,7 @@ jobs:
           token_format: access_token
 
       - name: Docker login to Artifact Registry
+        if: steps.changes.outputs.dashboard == 'true'
         uses: docker/login-action@v3
         with:
           username: oauth2accesstoken
@@ -35,11 +46,13 @@ jobs:
           registry: ${{ secrets.GCP_REGION }}-docker.pkg.dev
 
       - name: Build and push Docker Container
+        if: steps.changes.outputs.dashboard == 'true'
         run: |
           docker build -t ${{ env.IMAGE }} ./dashboard
           docker push ${{ env.IMAGE }}
 
       - name: Deploy to Cloud Run
+        if: steps.changes.outputs.dashboard == 'true'
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: ${{ secrets.CLOUD_RUN_SERVICE_NAME }}
@@ -47,25 +60,41 @@ jobs:
           image: ${{ env.IMAGE }}
 
       - name: Show deployed URL
+        if: steps.changes.outputs.dashboard == 'true'
         run: echo "Dashboard deployed to ${{ steps.deploy.outputs.url }}"
 
   # Kestra-related deploy steps (https://github.com/kestra-io/deploy-action)
+  # https://github.com/kestra-io/github-actions
   deploy-kestra-flows:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Check changed paths
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          filters: |
+            kestra:
+              - 'kestra/**'
 
       - name: Validate flows
+        if: steps.changes.outputs.kestra == 'true'
         uses: kestra-io/github-actions/validate-flows@main
         with:
           directory: ./kestra/flows
           server: http://${{ secrets.KESTRA_HOSTNAME }}:8080
 
       - name: Deploy flows
+        if: steps.changes.outputs.kestra == 'true'
         uses: kestra-io/github-actions/deploy-flows@main
         with:
           namespace: arxiv
-          directory: ./kestra/flows 
+          directory: ./kestra/flows
           server: http://${{ secrets.KESTRA_HOSTNAME }}:8080
           user: ${{ secrets.KESTRA_USERNAME }}
           password: ${{ secrets.KESTRA_PASSWORD }}
