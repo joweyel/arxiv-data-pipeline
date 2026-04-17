@@ -38,7 +38,7 @@ gcloud config set project arxiv-data-pipeline                             # set 
 gcloud auth application-default set-quota-project arxiv-data-pipeline    # point ADC quota to new project
 ```
 
-### 4. Link billing account 
+### 4. Link billing account
 - Go to https://console.cloud.google.com
 - Change to newly created project
 - Click on Billing and attach Billing account to project
@@ -136,17 +136,17 @@ A helpful command to stop the VM where the Orchestrator is running on, without d
 ```bash
 ZONE=europe-west1-b  # Example
 
-# Stop the vm instance without deleting 
+# Stop the vm instance without deleting
 gcloud compute instances stop kestra-vm --zone=${ZONE}
 
 # Check the state of the resource
-gcloud compute instances describe kestra-vm --zone=${ZONE} --format="value(status)"  
+gcloud compute instances describe kestra-vm --zone=${ZONE} --format="value(status)"
 
 # Restart the vm instance
 gcloud compute instances start kestra-vm --zone=${ZONE}
 ```
 
-> **`Note`**: Stopping and restarting the VM assigns a new external IP. After restart, get the new IP with: 
+> **`Note`**: Stopping and restarting the VM assigns a new external IP. After restart, get the new IP with:
 > ```bash
 > terraform -chdir=terraform output kestra_vm_ip
 > ```
@@ -178,7 +178,7 @@ The following secrets must be added to the GitHub repository:
 | `ARTIFACT_REGISTRY_REPO` | `arxiv-pipeline`                                        |
 | `CLOUD_RUN_SERVICE_NAME` | `arxiv-streamlit-dashboard`                             |
 
-#### **Option A (Web UI):** 
+#### **Option A (Web UI):**
 
 Follow the [GitHub secrets documentation](https://docs.github.com/en/actions/security-guides/encrypted-secrets).
 
@@ -211,4 +211,10 @@ pipx install pre-commit
 uv tool install pre-commit
 ```
 
-This step is done with `ruff` and the config can be found here: [.pre-commit-config.yaml](./.pre-commit-congfig.yaml)
+Then register the hooks with git (required once per clone):
+
+```bash
+pre-commit install
+```
+
+The hooks run automatically on every `git commit`. Config: [.pre-commit-config.yaml](./.pre-commit-config.yaml)
