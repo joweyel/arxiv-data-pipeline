@@ -1,0 +1,4 @@
+project_id             = "your-gcp-project-id"
+# region               = "europe-west1"   # default
+# data_bucket          = "arxiv-data-bucket"  # default
+# force_destroy_resource = false  # default
