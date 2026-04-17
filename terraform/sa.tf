@@ -1,7 +1,7 @@
 resource "google_service_account" "kestra_sa" {
   project      = var.project_id
   account_id   = "kestra-sa"
-  display_name = "Kestra Pipline Service Account"
+  display_name = "Kestra Pipeline Service Account"
   depends_on   = [google_project_service.required_apis]
 }
 
@@ -17,6 +17,15 @@ resource "google_service_account" "github_sa" {
   account_id   = "github-sa"
   display_name = "Github-Actions Service Account"
   depends_on   = [google_project_service.required_apis]
+}
+
+resource "google_service_account_key" "github_sa_key" {
+  service_account_id = google_service_account.github_sa.name
+}
+
+resource "local_file" "github_sa_key_file" {
+  content  = base64decode(google_service_account_key.github_sa_key.private_key)
+  filename = "${path.module}/../credentials/github-sa.json"
 }
 
 resource "google_project_iam_member" "kestra_sa_roles" {
