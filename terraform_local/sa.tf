@@ -1,6 +1,6 @@
 resource "google_service_account" "pipeline_sa" {
   project      = var.project_id
-  account_id   = "pipeline-sa"
+  account_id   = "pipeline-sa-local"
   display_name = "Local Pipeline Service Account"
   depends_on   = [google_project_service.required_apis]
 }

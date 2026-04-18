@@ -199,6 +199,36 @@ gh secret set CLOUD_RUN_SERVICE_NAME --body "arxiv-streamlit-dashboard"
 ![Github Secrets](./assets/images/gh-secrets.png)
 
 
+## Local Development Setup
+
+For local development, a lightweight Terraform config provisions only the required GCP data resources (GCS + BigQuery + service account). No VM or Cloud Run needed.
+
+### 1. Provision local infrastructure
+
+```bash
+cp terraform_local/terraform.tfvars.example terraform_local/terraform.tfvars
+# fill in project_id
+terraform -chdir=terraform_local init
+terraform -chdir=terraform_local apply -var-file="terraform.tfvars" -auto-approve
+```
+
+This generates `credentials/pipeline-sa.json` automatically.
+
+### 2. Start Kestra locally
+
+```bash
+docker compose -f kestra/docker-compose.yml up -d
+```
+
+Kestra UI is available at `http://localhost:8080`. Login with `admin@kestra.io` and `Admin1234!`.
+
+### 3. Tear down local infrastructure
+
+```bash
+terraform -chdir=terraform_local destroy -var-file="terraform.tfvars" -auto-approve
+```
+
+
 ## Pre-Commit Hooks
 
 To allow pre-commit CI tools you have to install `pre-commit` on your system. This can be done with `pipx` or `uv`:
