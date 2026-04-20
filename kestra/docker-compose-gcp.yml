@@ -17,14 +17,13 @@ services:
     image: kestra/kestra:v1.3.11
     pull_policy: always
     user: "root"
-    command: server standalone
+    command: server standalone --flow-path=/app/flows
     volumes:
       - kestra-data:/app/storage
       - /var/run/docker.sock:/var/run/docker.sock
       - /tmp/kestra-wd:/tmp/kestra-wd
       - ./flows:/app/flows
-      - ~/.config/gcloud:/root/.config/gcloud
-      - ../pipeline/data:/data
+      - /opt/kestra/data:/data
     environment:
       KESTRA_CONFIGURATION: |
         datasources:
@@ -56,14 +55,10 @@ services:
               - type: io.kestra.plugin.scripts.runner.docker.Docker
                 values:
                   volume-enabled: true
-        micronaut:
-          io:
-            watch:
-              enabled: true
-              paths:
-                - /app/flows
-    env_file:
-      - .env
+          secret:
+            type: gcp-secret-manager
+            gcp-secret-manager:
+              project: arxiv-data-pipeline
     ports:
       - "8080:8080"
       - "8081:8081"

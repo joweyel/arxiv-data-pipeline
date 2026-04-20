@@ -43,6 +43,7 @@ variable "gcp_service_apis" {
     "artifactregistry.googleapis.com",
     "run.googleapis.com",
     "compute.googleapis.com",
+    "secretmanager.googleapis.com",
   ]
 }
 
@@ -53,6 +54,7 @@ variable "kestra_sa_roles_list" {
     "roles/bigquery.dataEditor",
     "roles/bigquery.jobUser",
     "roles/storage.objectAdmin",
+    "roles/secretmanager.secretAccessor",
   ]
 }
 
@@ -65,6 +67,42 @@ variable "cloudrun_sa_roles_list" {
   ]
 }
 
+
+variable "kaggle_username" {
+  description = "Kaggle API username"
+  type        = string
+  sensitive   = true
+}
+
+variable "kaggle_key" {
+  description = "Kaggle API key"
+  type        = string
+  sensitive   = true
+}
+
+variable "kestra_username" {
+  description = "Kestra admin username"
+  type        = string
+  default     = "admin@kestra.io"
+}
+
+variable "kestra_password" {
+  description = "Kestra admin password"
+  type        = string
+  sensitive   = true
+}
+
+variable "bq_dataset" {
+  description = "BigQuery dataset for ingested data"
+  type        = string
+  default     = "ingestion_dataset"
+}
+
+variable "categories" {
+  description = "ArXiv categories to ingest"
+  type        = string
+  default     = "cs.CV,cs.RO"
+}
 
 variable "github_sa_roles_list" {
   description = "List of Roles that can be used for Github Actions"

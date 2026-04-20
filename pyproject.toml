@@ -1,0 +1,16 @@
+[project]
+name = "arxiv-pipeline"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "arxiv>=2.1.0",
+    "google-cloud-storage>=2.16.0",
+    "google-cloud-bigquery>=3.17.0",
+    "db-dtypes>=1.2.0",
+    "pandas>=2.0.0",
+    "kaggle>=1.6.0",
+    "tqdm>=4.0.0",
+    "pandas-gbq>=0.26.1",
+    "dbt-bigquery>=1.8.0",
+    "pre-commit>=4.5.1",
+]

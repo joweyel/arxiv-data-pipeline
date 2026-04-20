@@ -209,8 +209,18 @@ __marimo__/
 # Local-only files (not for version control)
 offline/
 
+# Large data files
+pipeline/data/*
+!pipeline/data/.gitkeep
+data/*
+!data/.gitkeep
+
+# VS Code
+.vscode/
+
 # Terraform
 **/.terraform/
 **/terraform.tfvars
 credentials/
 DEV_SETUP.md
+kestra/.env

@@ -8,6 +8,10 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 6.0"
     }
+    kestra = {
+      source  = "kestra-io/kestra"
+      version = "~> 0.19"
+    }
   }
 }
 

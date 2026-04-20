@@ -9,6 +9,7 @@ from google.cloud import storage
 GCS_BUCKET_NAME: str = os.getenv("GCS_BUCKET")
 CATEGORIES: list[str] = os.getenv("CATEGORIES", "cs.CV,cs.RO").split(",")
 MAX_RESULTS = int(os.getenv("MAX_RESULTS", 0)) or float("inf")
+FORCE_FETCH: bool = os.getenv("FORCE_FETCH", "").lower() == "true"
 
 # Arxiv Client Parameters
 PAGE_SIZE: int = int(os.getenv("PAGE_SIZE", 2000))
@@ -16,14 +17,14 @@ DELAY_SEC: float = float(os.getenv("DELAY_SEC", 3.0))
 NUM_RETRIES: int = int(os.getenv("NUM_RETRIES", 3))
 
 # Configurated client for data retrieval
-client = arxiv.Client(
+client: arxiv.Client = arxiv.Client(
     page_size=PAGE_SIZE,
     delay_seconds=DELAY_SEC,
     num_retries=NUM_RETRIES,
 )
 
 
-def parse_date(iso_date: str):
+def parse_date(iso_date: str) -> str:
     """Parse ISO 8601 to Arxiv time format YYYYMMDDHHMM.
 
     Output-format: "202401150600"
@@ -42,9 +43,9 @@ def parse_date(iso_date: str):
     return dt.strftime("%Y%m%d%H%M")
 
 
-def blob_exists_gcs(gcs: storage.Client, blob_path: str) -> bool:
+def blob_exists_gcs(storage_client: storage.Client, destination_blob_name: str) -> bool:
     """Check if blob/file exists at specified path in gcs bucket."""
-    return gcs.bucket(GCS_BUCKET_NAME).blob(blob_path).exists()
+    return storage_client.bucket(GCS_BUCKET_NAME).blob(destination_blob_name).exists()
 
 
 def upload_to_gcs(
@@ -63,7 +64,7 @@ def upload_to_gcs(
     papers: list[dict]
         List of paper dicts to serialize and upload.
     """
-    ndjson = "\n".join(json.dumps(p, ensure_ascii=False) for p in papers)
+    ndjson = "\n".join(json.dumps(paper, ensure_ascii=False) for paper in papers)
     bucket = storage_client.bucket(GCS_BUCKET_NAME)
     blob = bucket.blob(destination_blob_name)
     blob.upload_from_string(ndjson, content_type="application/x-ndjson")
@@ -73,7 +74,16 @@ def upload_to_gcs(
     )
 
 
-def save_local(papers: list[dict], path: str):
+def save_local(papers: list[dict], path: str) -> None:
+    """Save papers as NDJSON to a local file.
+
+    Parameters
+    ----------
+    papers: list[dict]
+        List of paper dicts to serialize.
+    path: str
+        Local file path to write to (e.g. "data/202604.ndjson").
+    """
     with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(json.dumps(p, ensure_ascii=False) for p in papers))
     print(f"Saved {len(papers)} papers to {path}")
@@ -123,8 +133,8 @@ def fetch_arxiv_data(start_date: str, end_date: str) -> list[dict]:
                 "primary_category": result.primary_category,
                 "all_categories": result.categories,
                 "published": result.published.isoformat(),
-                "updated": result.updated.isoformat(),
-                "version": version,
+                "updated": result.updated.date().isoformat(),
+                "version": int(version) if version else 1,
                 "doi": result.doi,
                 "journal_ref": result.journal_ref,
                 "comment": result.comment,
@@ -150,7 +160,7 @@ def main():
     else:  # CLOUD MODE
         storage_client = storage.Client()
         destination_blob_name: str = f"raw/arxiv/{start_date[:6]}.ndjson"
-        if blob_exists_gcs(storage_client, destination_blob_name):
+        if not FORCE_FETCH and blob_exists_gcs(storage_client, destination_blob_name):
             print(f"Skip {start_date[:6]} (already in GCS)")
             return
         if papers := fetch_arxiv_data(start_date, end_date):

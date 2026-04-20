@@ -1,4 +1,10 @@
 project_id             = "your-gcp-project-id"
-# region               = "europe-west1"   # default
-# data_bucket          = "arxiv-data-bucket"  # default
-# force_destroy_resource = false  # default
+region                 = "europe-west1"
+force_destroy_resource = false
+data_bucket            = "arxiv-data-bucket"
+bq_dataset             = "ingestion_dataset"
+categories             = "cs.CV,cs.RO"
+data_dir               = "/absolute/path/to/pipeline/data"
+kestra_url             = "http://localhost:8080"
+kestra_username        = "admin@kestra.io"
+kestra_password        = "Admin1234!"

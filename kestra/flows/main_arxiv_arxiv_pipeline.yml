@@ -1,0 +1,59 @@
+id: arxiv_pipeline
+namespace: arxiv
+description: Daily ArXiv ingestion - fetch current month, load to BigQuery, run dbt
+
+variables:
+  gcs_bucket: "{{ kv('GCS_BUCKET') }}"
+  gcp_project_id: "{{ kv('GCP_PROJECT_ID') }}"
+  bq_dataset: "{{ kv('BQ_DATASET') }}"
+  categories: "{{ kv('CATEGORIES') }}"
+  start_date: "{{ trigger.date | date('yyyy-MM') }}-01T00:00:00.000000000Z"
+  end_date: "{{ trigger.date | date('yyyy-MM-dd') }}T23:59:00.000000000Z"
+
+tasks:
+  - id: fetch
+    type: io.kestra.plugin.scripts.python.Commands
+    description: Fetch current month papers from ArXiv API and upload to GCS
+    namespaceFiles:
+      enabled: true
+    taskRunner:
+      type: io.kestra.plugin.scripts.runner.docker.Docker
+    beforeCommands:
+      - printf '%s' "$GCP_SA_JSON" > /tmp/sa.json
+      - pip install -q arxiv google-cloud-storage
+    commands:
+      - python pipeline/arxiv_api_fetch.py
+    env:
+      GOOGLE_APPLICATION_CREDENTIALS: /tmp/sa.json
+      GCP_SA_JSON: "{{ secret('GCP_SA_JSON') }}"
+      GCS_BUCKET: "{{ vars.gcs_bucket }}"
+      CATEGORIES: "{{ vars.categories }}"
+      START_DATE: "{{ vars.start_date }}"
+      END_DATE: "{{ vars.end_date }}"
+      FORCE_FETCH: "true"
+
+  - id: load
+    type: io.kestra.plugin.scripts.python.Commands
+    description: Load NDJSON from GCS into BigQuery via MERGE
+    namespaceFiles:
+      enabled: true
+    taskRunner:
+      type: io.kestra.plugin.scripts.runner.docker.Docker
+    beforeCommands:
+      - printf '%s' "$GCP_SA_JSON" > /tmp/sa.json
+      - pip install -q google-cloud-storage google-cloud-bigquery db-dtypes pandas pandas-gbq
+    commands:
+      - python pipeline/load.py
+    env:
+      GOOGLE_APPLICATION_CREDENTIALS: /tmp/sa.json
+      GCP_SA_JSON: "{{ secret('GCP_SA_JSON') }}"
+      GCS_BUCKET: "{{ vars.gcs_bucket }}"
+      GCP_PROJECT_ID: "{{ vars.gcp_project_id }}"
+      BQ_DATASET: "{{ vars.bq_dataset }}"
+      START_DATE: "{{ vars.start_date }}"
+
+triggers:
+  - id: daily_schedule
+    type: io.kestra.plugin.core.trigger.Schedule
+    cron: "0 6 * * *"
+    disabled: true

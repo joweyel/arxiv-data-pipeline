@@ -8,6 +8,10 @@ terraform {
       source  = "hashicorp/google"
       version = "~> 6.0"
     }
+    kestra = {
+      source  = "kestra-io/kestra"
+      version = "~> 0.19"
+    }
   }
 }
 
@@ -66,7 +70,7 @@ resource "google_artifact_registry_repository" "artifact_docker_repo" {
 # Google Computer Instance VM for Kestra Orchstration Tool
 resource "google_compute_instance" "kestra_instance" {
   name         = "kestra-vm"
-  machine_type = "e2-medium"
+  machine_type = "e2-standard-2"
   zone         = "${var.region}-b"
 
   tags = ["kestra", "orchestration"]
@@ -99,7 +103,7 @@ resource "null_resource" "kestra_deploy" {
   depends_on = [google_compute_instance.kestra_instance]
 
   provisioner "file" {
-    source      = "${path.module}/../kestra/docker-compose.yml"
+    source      = "${path.module}/../kestra/docker-compose-gcp.yml"
     destination = "/home/ubuntu/docker-compose.yml"
 
     connection {
@@ -123,6 +127,33 @@ resource "null_resource" "kestra_deploy" {
       host        = google_compute_instance.kestra_instance.network_interface[0].access_config[0].nat_ip
     }
   }
+}
+
+# GCP Secret Manager secrets for Kestra
+resource "google_secret_manager_secret" "kaggle_username" {
+  secret_id  = "kaggle-username"
+  depends_on = [google_project_service.required_apis]
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret_version" "kaggle_username_value" {
+  secret      = google_secret_manager_secret.kaggle_username.id
+  secret_data = var.kaggle_username
+}
+
+resource "google_secret_manager_secret" "kaggle_key" {
+  secret_id  = "kaggle-key"
+  depends_on = [google_project_service.required_apis]
+  replication {
+    auto {}
+  }
+}
+
+resource "google_secret_manager_secret_version" "kaggle_key_value" {
+  secret      = google_secret_manager_secret.kaggle_key.id
+  secret_data = var.kaggle_key
 }
 
 # Firewall for access to the orchestration Compute Instance

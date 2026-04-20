@@ -1,0 +1,72 @@
+id: kaggle_ingestion
+namespace: arxiv
+description: Bulk ingestion using Kaggle arXiv snapshot. Skips months already in GCS.
+
+inputs:
+  - id: start_year
+    type: INT
+    defaults: 2022
+  - id: end_year
+    type: INT
+    defaults: 2022
+  - id: start_month
+    type: INT
+    defaults: 1
+  - id: end_month
+    type: INT
+    defaults: 12
+  - id: bulk_load
+    type: BOOLEAN
+    defaults: true
+
+tasks:
+  - id: kaggle_backfill
+    type: io.kestra.plugin.scripts.python.Commands
+    namespaceFiles:
+      enabled: true
+    taskRunner:
+      type: io.kestra.plugin.scripts.runner.docker.Docker
+      volumes:
+        - "{{ kv('DATA_DIR') }}:/data"
+    beforeCommands:
+      - printf '%s' "$GCP_SA_JSON" > /tmp/sa.json
+      - pip install -q google-cloud-storage kaggle tqdm
+    commands:
+      - python pipeline/kaggle_to_gcs.py
+    env:
+      GOOGLE_APPLICATION_CREDENTIALS: /tmp/sa.json
+      GCP_SA_JSON: "{{ secret('GCP_SA_JSON') }}"
+      KAGGLE_JSONL: "/data/arxiv-metadata-oai-snapshot.zip"
+      GCS_BUCKET: "{{ kv('GCS_BUCKET') }}"
+      CATEGORIES: "{{ kv('CATEGORIES') }}"
+      START_YEAR: "{{ inputs.start_year }}"
+      END_YEAR: "{{ inputs.end_year }}"
+      START_MONTH: "{{ inputs.start_month }}"
+      END_MONTH: "{{ inputs.end_month }}"
+      KAGGLE_USERNAME: "{{ secret('KAGGLE_USERNAME') }}"
+      KAGGLE_KEY: "{{ secret('KAGGLE_KEY') }}"
+
+  - id: load_all
+    type: io.kestra.plugin.scripts.python.Commands
+    namespaceFiles:
+      enabled: true
+    taskRunner:
+      type: io.kestra.plugin.scripts.runner.docker.Docker
+      volumes:
+        - "{{ kv('DATA_DIR') }}:/data"
+    beforeCommands:
+      - printf '%s' "$GCP_SA_JSON" > /tmp/sa.json
+      - pip install -q google-cloud-storage google-cloud-bigquery db-dtypes pandas pandas-gbq
+    commands:
+      - python pipeline/load.py
+    env:
+      GOOGLE_APPLICATION_CREDENTIALS: /tmp/sa.json
+      GCP_SA_JSON: "{{ secret('GCP_SA_JSON') }}"
+      GCS_BUCKET: "{{ kv('GCS_BUCKET') }}"
+      GCP_PROJECT_ID: "{{ kv('GCP_PROJECT_ID') }}"
+      BQ_DATASET: "{{ kv('BQ_DATASET') }}"
+      START_YEAR: "{{ inputs.start_year }}"
+      END_YEAR: "{{ inputs.end_year }}"
+      START_MONTH: "{{ inputs.start_month }}"
+      END_MONTH: "{{ inputs.end_month }}"
+      BULK_LOAD: "{{ inputs.bulk_load }}"
