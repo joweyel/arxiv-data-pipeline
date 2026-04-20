@@ -32,10 +32,18 @@ Skip if `~/.ssh/id_ed25519.pub` already exists.
 
 ### 3. Creating GCP project
 
+> **`IMPORTANT`**: Please choose your own project name here and use it as `project_id` later!!
+> In some parts of the setup is as example my project id `arxiv-data-pipeline` used
+
+You can also create the project via the Web UI
+
 ```bash
-gcloud projects create arxiv-data-pipeline --name="ArXiv Data Pipeline"  # create project
-gcloud config set project arxiv-data-pipeline                             # set as active project
-gcloud auth application-default set-quota-project arxiv-data-pipeline    # point ADC quota to new project
+# Example: arxiv-data-pipeline-2
+export PROJECT=arxiv-data-pipeline-2
+
+gcloud projects create ${PROJECT} --name="ArXiv Data Pipeline"  # create project
+gcloud config set project ${PROJECT}                             # set as active project
+gcloud auth application-default set-quota-project ${PROJECT}    # point ADC quota to new project
 ```
 
 ### 4. Link billing account
