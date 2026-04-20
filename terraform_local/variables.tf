@@ -66,6 +66,12 @@ variable "categories" {
   default     = "cs.CV,cs.RO"
 }
 
+variable "deploy_kestra" {
+  description = "Set to true after Kestra is running to seed KV store and upload namespace files"
+  type        = bool
+  default     = false
+}
+
 variable "pipeline_sa_roles_list" {
   description = "Roles for the local pipeline service account"
   type        = list(string)

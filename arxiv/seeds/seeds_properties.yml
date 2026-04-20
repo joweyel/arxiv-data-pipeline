@@ -1,0 +1,18 @@
+seeds:
+  - name: arxiv_categories
+    description: >
+      ArXiv category taxonomy mapping category identifiers to their full names and
+      subject groups. Used as a dimension table to enrich paper records with
+      human-readable category names.
+    columns:
+      - name: category_id
+        description: ArXiv category identifier (e.g. cs.CV, cs.RO)
+        data_tests:
+          - unique
+          - not_null
+      - name: group
+        description: Top-level subject group (e.g. cs, eess, math)
+      - name: name
+        description: Human-readable category name (e.g. Computer Vision and Pattern Recognition)
+      - name: description
+        description: Full description of the category scope

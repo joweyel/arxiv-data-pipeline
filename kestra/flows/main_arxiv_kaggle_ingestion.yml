@@ -70,3 +70,32 @@ tasks:
       START_MONTH: "{{ inputs.start_month }}"
       END_MONTH: "{{ inputs.end_month }}"
       BULK_LOAD: "{{ inputs.bulk_load }}"
+
+  - id: dbt_run
+    type: io.kestra.plugin.dbt.cli.DbtCLI
+    containerImage: ghcr.io/kestra-io/dbt-bigquery:latest
+    namespaceFiles:
+      enabled: true
+    projectDir: arxiv
+    commands:
+      - dbt deps
+      - dbt seed
+      - dbt run
+    profiles: |
+      arxiv:
+        outputs:
+          dev:
+            type: bigquery
+            method: service-account
+            project: "{{ kv('GCP_PROJECT_ID') }}"
+            dataset: arxiv_dataset
+            keyfile: sa.json
+            location: "{{ kv('GCP_REGION') }}"
+            threads: 4
+            timeout_seconds: 300
+            priority: interactive
+        target: dev
+    inputFiles:
+      sa.json: "{{ secret('GCP_SA_JSON') }}"
+    env:
+      GCP_PROJECT_ID: "{{ kv('GCP_PROJECT_ID') }}"

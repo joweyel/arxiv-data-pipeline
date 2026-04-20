@@ -36,10 +36,48 @@ resource "kestra_kv" "bq_dataset" {
   depends_on = [google_compute_instance.kestra_instance]
 }
 
+resource "kestra_kv" "gcp_region" {
+  namespace  = "arxiv"
+  key        = "GCP_REGION"
+  value      = jsonencode(var.region)
+  type       = "STRING"
+  depends_on = [google_compute_instance.kestra_instance]
+}
+
 resource "kestra_kv" "categories" {
   namespace  = "arxiv"
   key        = "CATEGORIES"
   value      = jsonencode(var.categories)
   type       = "STRING"
+  depends_on = [google_compute_instance.kestra_instance]
+}
+
+resource "kestra_namespace_file" "pipeline_files" {
+  for_each   = fileset("${path.module}/../pipeline", "*.py")
+  namespace  = "arxiv"
+  filename   = "/pipeline/${each.key}"
+  content    = file("${path.module}/../pipeline/${each.key}")
+  depends_on = [google_compute_instance.kestra_instance]
+}
+
+resource "kestra_namespace_file" "dbt_files" {
+  for_each   = fileset("${path.module}/../arxiv", "**/*.{sql,yml,yaml,csv,md,txt,toml}")
+  namespace  = "arxiv"
+  filename   = "/arxiv/${each.key}"
+  content    = file("${path.module}/../arxiv/${each.key}")
+  depends_on = [google_compute_instance.kestra_instance]
+}
+
+resource "kestra_flow" "kaggle_ingestion" {
+  namespace  = "arxiv"
+  flow_id    = "kaggle_ingestion"
+  content    = file("${path.module}/../kestra/flows/main_arxiv_kaggle_ingestion.yml")
+  depends_on = [google_compute_instance.kestra_instance]
+}
+
+resource "kestra_flow" "arxiv_pipeline" {
+  namespace  = "arxiv"
+  flow_id    = "arxiv_pipeline"
+  content    = file("${path.module}/../kestra/flows/main_arxiv_arxiv_pipeline.yml")
   depends_on = [google_compute_instance.kestra_instance]
 }

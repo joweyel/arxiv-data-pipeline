@@ -1,0 +1,73 @@
+models:
+  - name: fct_papers
+    description: >
+      Analytics-ready fact table of ArXiv papers enriched with category names.
+      Partitioned by date_published, clustered by primary_category.
+      Excludes abstract to reduce query cost.
+    columns:
+      - name: arxiv_id
+        description: Unique ArXiv paper identifier (no version suffix)
+        data_tests:
+          - not_null
+          - unique
+      - name: title
+        description: Paper title
+      - name: authors
+        description: List of author names
+      - name: primary_category
+        description: Primary ArXiv category (e.g. cs.CV, cs.RO)
+        data_tests:
+          - not_null
+      - name: all_categories
+        description: All categories including cross-listings
+      - name: category
+        description: Human-readable category name (e.g. Computer Vision and Pattern Recognition)
+      - name: subject_group
+        description: Top-level subject group (e.g. cs, eess, math)
+      - name: version
+        description: Latest version number
+      - name: doi
+        description: DOI if journal-published
+      - name: journal_ref
+        description: Journal or conference reference string
+      - name: is_published
+        description: True if doi or journal_ref is present
+      - name: comment
+        description: Author comment (pages, figures, GitHub links)
+      - name: date_published
+        description: Original submission date (v1), partition key
+      - name: date_updated
+        description: Date of latest version
+      - name: year
+        description: Submission year extracted from date_published
+      - name: month
+        description: Submission month extracted from date_published
+      - name: has_code
+        description: True if a GitHub link is present in comment or abstract
+      - name: is_survey
+        description: True if the paper is identified as a survey
+
+  - name: fct_papers_embeddings
+    description: >
+      Embedding-oriented table with abstract and category context.
+      Intended as input for SciBERT/KeyBERT enrichment pipeline.
+    columns:
+      - name: arxiv_id
+        description: Unique ArXiv paper identifier (no version suffix)
+        data_tests:
+          - not_null
+          - unique
+      - name: title
+        description: Paper title
+      - name: abstract
+        description: Paper abstract, primary input for embedding generation
+      - name: primary_category
+        description: Primary ArXiv category (e.g. cs.CV, cs.RO)
+      - name: category
+        description: Human-readable category name
+      - name: date_published
+        description: Original submission date (v1)
+      - name: year
+        description: Submission year extracted from date_published
+      - name: month
+        description: Submission month extracted from date_published

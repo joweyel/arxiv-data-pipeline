@@ -1,0 +1,41 @@
+sources:
+  - name: ingestion_dataset
+    description: Raw ArXiv paper metadata ingested from the Kaggle snapshot and ArXiv API
+    database: "{{ env_var('GCP_PROJECT_ID', 'your-gcp-project-id') }}"
+    schema: ingestion_dataset
+    tables:
+      - name: papers
+        description: Raw ArXiv paper records (cs.CV and cs.RO categories)
+        columns:
+          - name: arxiv_id
+            description: Unique ArXiv paper identifier (no version suffix)
+          - name: title
+            description: Paper title
+          - name: abstract
+            description: Paper abstract
+          - name: authors
+            description: List of author names
+          - name: primary_category
+            description: Primary ArXiv category (e.g. cs.CV, cs.RO)
+          - name: all_categories
+            description: All categories including cross-listings
+          - name: version
+            description: Latest version number
+          - name: doi
+            description: DOI if journal-published
+          - name: journal_ref
+            description: Journal or conference reference string
+          - name: comment
+            description: Author comment (pages, figures, GitHub links)
+          - name: date_published
+            description: Original submission date (v1)
+          - name: date_updated
+            description: Date of latest version
+          - name: submission_year
+            description: Year extracted from date_published
+          - name: submission_month
+            description: Month extracted from date_published
+          - name: has_code
+            description: True if a GitHub link is present in comment or abstract
+          - name: is_survey
+            description: True if the paper is identified as a survey

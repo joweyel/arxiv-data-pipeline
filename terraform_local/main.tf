@@ -12,6 +12,10 @@ terraform {
       source  = "kestra-io/kestra"
       version = "~> 0.19"
     }
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.0"
+    }
   }
 }
 
@@ -23,6 +27,29 @@ provider "google" {
 ############################
 ###      RESOURCES       ###
 ############################
+
+# Service Account for pipeline
+resource "google_service_account" "pipeline_sa" {
+  account_id   = "pipeline-sa-local"
+  display_name = "Pipeline SA (local)"
+}
+
+resource "google_project_iam_member" "pipeline_sa_roles" {
+  for_each = toset(var.pipeline_sa_roles_list)
+  project  = var.project_id
+  role     = each.value
+  member   = "serviceAccount:${google_service_account.pipeline_sa.email}"
+}
+
+resource "google_service_account_key" "pipeline_sa_key" {
+  service_account_id = google_service_account.pipeline_sa.name
+}
+
+resource "local_file" "pipeline_sa_key_file" {
+  content         = base64decode(google_service_account_key.pipeline_sa_key.private_key)
+  filename        = "${path.module}/../credentials/pipeline-sa.json"
+  file_permission = "0600"
+}
 
 # GCS Bucket for ingestions
 resource "google_storage_bucket" "arxiv_data_bucket" {

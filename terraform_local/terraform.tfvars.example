@@ -8,3 +8,4 @@ data_dir               = "/absolute/path/to/pipeline/data"
 kestra_url             = "http://localhost:8080"
 kestra_username        = "admin@kestra.io"
 kestra_password        = "Admin1234!"
+deploy_kestra          = false   # set to true after Kestra is running

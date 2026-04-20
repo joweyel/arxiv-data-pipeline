@@ -1,0 +1,49 @@
+models:
+  - name: int_papers_categories
+    description: >
+      Staging papers enriched with human-readable category names and groups
+      from the ArXiv category taxonomy seed. One row per paper, joined on primary_category.
+    columns:
+      - name: arxiv_id
+        description: Unique ArXiv paper identifier (no version suffix)
+        data_tests:
+          - not_null
+          - unique
+      - name: title
+        description: Paper title
+      - name: abstract
+        description: Paper abstract
+      - name: authors
+        description: List of author names
+      - name: primary_category
+        description: Primary ArXiv category identifier (e.g. cs.CV, cs.RO)
+        data_tests:
+          - not_null
+      - name: all_categories
+        description: All categories including cross-listings
+      - name: version
+        description: Latest version number
+      - name: doi
+        description: DOI if journal-published
+      - name: journal_ref
+        description: Journal or conference reference string
+      - name: is_published
+        description: True if doi or journal_ref is present
+      - name: comment
+        description: Author comment (pages, figures, GitHub links)
+      - name: date_published
+        description: Original submission date (v1)
+      - name: date_updated
+        description: Date of latest version
+      - name: submission_year
+        description: Year extracted from date_published
+      - name: submission_month
+        description: Month extracted from date_published
+      - name: has_code
+        description: True if a GitHub link is present in comment or abstract
+      - name: is_survey
+        description: True if the paper is identified as a survey
+      - name: category_name
+        description: Human-readable category name (e.g. Computer Vision and Pattern Recognition)
+      - name: category_group
+        description: Top-level subject group (e.g. cs, eess, math)

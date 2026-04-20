@@ -45,10 +45,14 @@ gcloud auth application-default set-quota-project arxiv-data-pipeline    # point
 
 ### 5. Create GCS Bucket for Terraform State
 
+Required for both local and production Terraform deployments. GCS bucket names are globally unique, so choose a name that is not already taken (e.g. `arxiv-tf-state-YOUR_PROJECT_ID`).
+
 ```bash
-gcloud storage buckets create gs://arxiv-tf-state --location=europe-west1   # create state bucket
-gcloud storage buckets update gs://arxiv-tf-state --versioning              # enable versioning for recovery
+gcloud storage buckets create gs://arxiv-tf-state-YOUR_PROJECT_ID --location=europe-west1   # create state bucket
+gcloud storage buckets update gs://arxiv-tf-state-YOUR_PROJECT_ID --versioning              # enable versioning for recovery
 ```
+
+Also set a unique name for the data bucket in `terraform_local/terraform.tfvars` (the default `arxiv-data-bucket` may already be taken).
 
 ### 6. Enable Required APIs (can be skipped)
 
@@ -199,22 +203,46 @@ gh secret set CLOUD_RUN_SERVICE_NAME --body "arxiv-streamlit-dashboard"
 ![Github Secrets](./assets/images/gh-secrets.png)
 
 
-## Local Development Setup
+## Local Kestra + GCP Setup
 
-For local development, a lightweight Terraform config provisions only the required GCP data resources (GCS + BigQuery + service account). No VM or Cloud Run needed.
+Provisions GCS + BigQuery + service account on GCP via Terraform. Kestra runs locally via Docker Compose.
 
-### 1. Provision local infrastructure
+> **`Terraform apply is run twice`**: once before Kestra starts (`deploy_kestra = false`) to create GCP resources and the SA key, and once after (`deploy_kestra = true`) to seed the Kestra KV store and upload namespace files.
+
+### 1. Configure terraform.tfvars
 
 ```bash
 cp terraform_local/terraform.tfvars.example terraform_local/terraform.tfvars
-# fill in project_id
+```
+
+Fill in `project_id`, `data_bucket` (globally unique name), and `data_dir` (absolute path to `pipeline/data`). Leave `deploy_kestra = false` for now.
+
+### 2. First Terraform apply (GCP resources + SA key)
+
+```bash
 terraform -chdir=terraform_local init
 terraform -chdir=terraform_local apply -var-file="terraform.tfvars" -auto-approve
 ```
 
-This generates `credentials/pipeline-sa.json` automatically.
+This creates GCS, BigQuery datasets, the service account, and writes `credentials/pipeline-sa.json`.
 
-### 2. Start Kestra locally
+### 3. Configure Kestra credentials
+
+```bash
+cp kestra/.env.example kestra/.env
+```
+
+Fill in `kestra/.env` (all values must be base64-encoded):
+
+```bash
+echo -n "your-kaggle-username" | base64
+echo -n "your-kaggle-api-key" | base64
+base64 -w 0 credentials/pipeline-sa.json
+```
+
+Paste outputs into `kestra/.env`.
+
+### 4. Start Kestra
 
 ```bash
 docker compose -f kestra/docker-compose.yml up -d
@@ -222,7 +250,13 @@ docker compose -f kestra/docker-compose.yml up -d
 
 Kestra UI is available at `http://localhost:8080`. Login with `admin@kestra.io` and `Admin1234!`.
 
-### 3. Tear down local infrastructure
+### 5. Second Terraform apply (seeds KV store + uploads namespace files)
+
+```bash
+terraform -chdir=terraform_local apply -var-file="terraform.tfvars" -var="deploy_kestra=true" -auto-approve
+```
+
+### 6. Tear down
 
 ```bash
 terraform -chdir=terraform_local destroy -var-file="terraform.tfvars" -auto-approve
