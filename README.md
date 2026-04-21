@@ -97,8 +97,6 @@ Supplemental live fetch for the most recent papers (cs.CV + cs.RO), paginated at
 
 ## BigQuery Tables
 
-| Table                                 | Description                                                             |
-| ------------------------------------- | ----------------------------------------------------------------------- |
 ### `ingestion_dataset.papers` (raw, partitioned by month + clustered by primary_category)
 
 | Column | Type | Description |
@@ -120,51 +118,6 @@ Supplemental live fetch for the most recent papers (cs.CV + cs.RO), paginated at
 | `has_code` | BOOL | True if a GitHub link is present in comment or abstract |
 | `is_survey` | BOOL | True if title contains the word "survey" |
 
-### `arxiv_dataset.fct_papers` (mart, partitioned + clustered)
-
-| Column | Type | Description |
-|---|---|---|
-| `arxiv_id` | STRING | Unique ArXiv identifier (no version suffix) |
-| `title` | STRING | Paper title |
-| `authors` | ARRAY\<STRING\> | List of author names |
-| `primary_category` | STRING | Primary ArXiv category (e.g. cs.CV) |
-| `all_categories` | ARRAY\<STRING\> | All categories including cross-listings |
-| `category` | STRING | Human-readable category name |
-| `subject_group` | STRING | Top-level subject group (e.g. cs, eess) |
-| `version` | STRING | Latest version number |
-| `doi` | STRING | DOI if journal-published |
-| `journal_ref` | STRING | Journal or conference reference string |
-| `is_published` | BOOL | True if doi or journal_ref is present |
-| `comment` | STRING | Author comment |
-| `date_published` | TIMESTAMP | Original submission date (v1), partition key (by month) |
-| `date_updated` | DATE | Date of latest version |
-| `year` | INT64 | Submission year |
-| `month` | INT64 | Submission month |
-| `has_code` | BOOL | True if a GitHub link is present |
-| `is_survey` | BOOL | True if the paper is identified as a survey |
-
-### `arxiv_dataset.fct_papers_embeddings` (mart)
-
-| Column | Type | Description |
-|---|---|---|
-| `arxiv_id` | STRING | Unique ArXiv identifier |
-| `title` | STRING | Paper title |
-| `abstract` | STRING | Paper abstract, primary input for embedding generation |
-| `primary_category` | STRING | Primary ArXiv category |
-| `category` | STRING | Human-readable category name |
-| `date_published` | DATE | Original submission date |
-| `year` | INT64 | Submission year |
-| `month` | INT64 | Submission month |
-
-### `arxiv_dataset.arxiv_categories` (dbt seed)
-
-| Column | Type | Description |
-|---|---|---|
-| `category_id` | STRING | ArXiv category identifier (e.g. cs.CV, cs.RO) |
-| `group` | STRING | Top-level subject group (e.g. cs, eess, math) |
-| `name` | STRING | Human-readable category name |
-| `description` | STRING | Full description of the category scope |
-
 
 ## Dashboard
 
@@ -179,6 +132,9 @@ Tiles:
 ![DB](./assets/images/dashboard.png)
 
 ## Quickstart
+
+**Important**: Use only terraform_local based instructions! Other is WIP.
+
 
 See [SETUP.md](./SETUP.md) for full instructions. Short version:
 
