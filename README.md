@@ -14,7 +14,7 @@ Built as the final project for [DE Zoomcamp 2026](https://github.com/DataTalksCl
 
 ArXiv publishes thousands of research papers per month across Computer Vision and Robotics. There is no easy way to see publication trends over time, which topics are growing, or how open-source adoption has changed. This pipeline collects paper metadata from two sources (Kaggle historical dataset + ArXiv API for recent papers), loads it into BigQuery, and exposes it through an interactive dashboard.
 
-For full setup instructions see [SETUP.md](./SETUP.md).
+For full setup instructions see [SETUP.md](./SETUP.md). Use the `terraform_local` based setup.
 
 
 ## Architecture

@@ -1,5 +1,7 @@
 # Setup Instructions
 
+> **`IMPORTANT`**: Use the [Local Kestra + GCP Setup](#local-kestra--gcp-setup) (`terraform_local`). The full cloud setup under [Terraform Infrastructure Provisioning](#terraform-infrastructure-provisioning) is a work in progress.
+
 ## Creating GCP project
 
 ### 0. Install `google-cloud-cli`
