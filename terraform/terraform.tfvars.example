@@ -3,3 +3,5 @@ region                 = "europe-west1"
 my_ip                  = "0.0.0.0/0"
 tf_state_bucket        = "your-tf-state-bucket"
 force_destroy_resource = true
+kaggle_username        = "your-kaggle-username"
+kaggle_key             = "your-kaggle-api-key"

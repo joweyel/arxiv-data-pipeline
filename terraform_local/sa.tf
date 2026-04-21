@@ -10,8 +10,9 @@ resource "google_service_account_key" "pipeline_sa_key" {
 }
 
 resource "local_file" "pipeline_sa_key_file" {
-  content  = base64decode(google_service_account_key.pipeline_sa_key.private_key)
-  filename = "${path.module}/../credentials/pipeline-sa.json"
+  content         = base64decode(google_service_account_key.pipeline_sa_key.private_key)
+  filename        = "${path.module}/../credentials/pipeline-sa.json"
+  file_permission = "0600"
 }
 
 resource "google_project_iam_member" "pipeline_sa_roles" {

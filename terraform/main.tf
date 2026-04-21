@@ -1,6 +1,5 @@
 terraform {
   backend "gcs" {
-    bucket = "arxiv-tf-state"
     prefix = "terraform/state"
   }
   required_providers {
