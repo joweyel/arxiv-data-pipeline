@@ -1,6 +1,6 @@
 project_id             = "your-gcp-project-id"
 region                 = "europe-west1"
-force_destroy_resource = false
+force_destroy_resource = true
 data_bucket            = "arxiv-data-bucket"
 bq_dataset             = "ingestion_dataset"
 categories             = "cs.CV,cs.RO"

@@ -95,29 +95,6 @@ All steps are orchestrated by Kestra. For local development, Kestra runs via Doc
 Supplemental live fetch for the most recent papers (cs.CV + cs.RO), paginated at 2000 results per request. Used to top up the dataset with papers not yet in the Kaggle snapshot.
 
 
-## BigQuery Tables
-
-### `ingestion_dataset.papers` (raw, partitioned by month + clustered by primary_category)
-
-| Column | Type | Description |
-|---|---|---|
-| `arxiv_id` | STRING | Unique ArXiv identifier (no version suffix) |
-| `title` | STRING | Paper title |
-| `abstract` | STRING | Paper abstract |
-| `authors` | STRING REPEATED | List of author names |
-| `primary_category` | STRING | Primary ArXiv category (e.g. cs.CV) |
-| `all_categories` | STRING REPEATED | All categories including cross-listings |
-| `version` | INTEGER | Latest version number |
-| `doi` | STRING | DOI if journal-published |
-| `journal_ref` | STRING | Journal or conference reference string |
-| `comment` | STRING | Author comment (pages, figures, GitHub links) |
-| `date_published` | DATE | Original submission date (v1), partition key |
-| `date_updated` | DATE | Date of latest version |
-| `submission_year` | INTEGER | Year extracted from date_published |
-| `submission_month` | INTEGER | Month extracted from date_published |
-| `has_code` | BOOL | True if a GitHub link is present in comment or abstract |
-| `is_survey` | BOOL | True if title contains the word "survey" |
-
 
 ## Dashboard
 
