@@ -73,6 +73,7 @@ Tiles:
 - **`Publication Trend by Year`** (stacked bar chart): papers per category per year, 2015-2026
 - **`Scorecards`**: Total Papers, Code Adoption Rate, Published Rate
 
+![DB](./assets/images/dashboard.png)
 
 ## Quickstart
 
