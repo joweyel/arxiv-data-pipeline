@@ -1,0 +1,22 @@
+FROM pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir \
+    transformers \
+    google-cloud-bigquery \
+    db-dtypes \
+    pandas \
+    numpy \
+    tqdm
+
+COPY embed_papers.py .
+COPY data/pwc_tasks.csv data/pwc_tasks.csv
+
+ENV GCP_PROJECT_ID=""
+ENV BQ_DATASET="ingestion_dataset"
+ENV BATCH_SIZE="128"
+ENV TOP_N_KEYWORDS="8"
+ENV BACKFILL_ALL=""
+
+ENTRYPOINT ["python", "embed_papers.py"]

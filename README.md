@@ -42,7 +42,7 @@ All steps are orchestrated by Kestra. For local development, Kestra runs via Doc
 
 **Flow parameters** (configurable inputs per run):
 
-- Start and end Month and Year specify what timeframe from the data gets uploaded. 
+- Start and end Month and Year specify what timeframe from the data gets uploaded.
 - `bulk_load` specifies if all data is loaded to Bigquery at once (True) or incremental (False)
   - This is relevant if your computer is not strong enough to load multiple years of data into RAM
 
@@ -71,24 +71,24 @@ All steps are orchestrated by Kestra. For local development, Kestra runs via Doc
 
 ### Kaggle arXiv Dataset
 
-[Cornell-University/arxiv](https://www.kaggle.com/datasets/Cornell-University/arxiv) — a regularly updated JSONL snapshot of all arXiv paper metadata maintained by Cornell University. This is the primary data source for historical papers (2007 to present). The pipeline filters to cs.CV and cs.RO categories.
+[Cornell-University/arxiv](https://www.kaggle.com/datasets/Cornell-University/arxiv): a regularly updated JSONL snapshot of all arXiv paper metadata maintained by Cornell University. This is the primary data source for historical papers (2007 to present). The pipeline filters to cs.CV and cs.RO categories.
 
-| Field | Type | Description |
-|---|---|---|
-| `id` | string | ArXiv paper ID (e.g. `2301.00001`) |
-| `submitter` | string | Name of the submitter |
-| `authors` | string | Raw author string |
-| `authors_parsed` | list | Parsed as `[[last, first, suffix], ...]` |
-| `title` | string | Paper title |
-| `abstract` | string | Paper abstract |
-| `categories` | string | Space-separated category codes (e.g. `cs.CV cs.LG`) |
-| `comments` | string | Author comments (pages, figures, links) |
-| `journal-ref` | string | Journal or conference reference |
-| `doi` | string | DOI if journal-published |
-| `report-no` | string | Report number (not used by pipeline) |
-| `license` | string | License (not always present) |
-| `versions` | list | `[{version, created}, ...]` — full version history |
-| `update_date` | string | Date of latest version |
+| Field            | Type   | Description                                         |
+| ---------------- | ------ | --------------------------------------------------- |
+| `id`             | string | ArXiv paper ID (e.g. `2301.00001`)                  |
+| `submitter`      | string | Name of the submitter                               |
+| `authors`        | string | Raw author string                                   |
+| `authors_parsed` | list   | Parsed as `[[last, first, suffix], ...]`            |
+| `title`          | string | Paper title                                         |
+| `abstract`       | string | Paper abstract                                      |
+| `categories`     | string | Space-separated category codes (e.g. `cs.CV cs.LG`) |
+| `comments`       | string | Author comments (pages, figures, links)             |
+| `journal-ref`    | string | Journal or conference reference                     |
+| `doi`            | string | DOI if journal-published                            |
+| `report-no`      | string | Report number (not used by pipeline)                |
+| `license`        | string | License (not always present)                        |
+| `versions`       | list   | `[{version, created}, ...]` (full version history)  |
+| `update_date`    | string | Date of latest version                              |
 
 ### ArXiv API
 

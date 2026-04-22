@@ -1,0 +1,24 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+RUN pip install --no-cache-dir \
+    torch --index-url https://download.pytorch.org/whl/cpu && \
+    pip install --no-cache-dir \
+    transformers \
+    google-cloud-bigquery \
+    db-dtypes \
+    pandas \
+    numpy \
+    tqdm
+
+COPY embed_papers.py .
+COPY data/pwc_tasks.csv data/pwc_tasks.csv
+
+ENV GCP_PROJECT_ID=""
+ENV BQ_DATASET="ingestion_dataset"
+ENV BATCH_SIZE="32"
+ENV TOP_N_KEYWORDS="8"
+ENV BACKFILL_ALL=""
+
+ENTRYPOINT ["python", "embed_papers.py"]

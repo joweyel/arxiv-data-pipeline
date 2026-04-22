@@ -36,10 +36,21 @@ resource "google_storage_bucket" "arxiv_data_bucket" {
 
   lifecycle_rule {
     condition {
-      age = 60
+      age = 90
     }
     action {
-      type = "Delete"
+      type          = "SetStorageClass"
+      storage_class = "NEARLINE"
+    }
+  }
+
+  lifecycle_rule {
+    condition {
+      age = 365
+    }
+    action {
+      type          = "SetStorageClass"
+      storage_class = "COLDLINE"
     }
   }
 }
