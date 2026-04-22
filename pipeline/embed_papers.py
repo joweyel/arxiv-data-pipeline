@@ -131,6 +131,9 @@ def write_batch(
         if not rows:
             continue
         df = pd.DataFrame(rows)
+        for col in ("extracted_at", "embedded_at"):
+            if col in df.columns:
+                df[col] = pd.to_datetime(df[col], utc=True)
         ref = f"{GCP_PROJECT_ID}.{BQ_DATASET}.{table_id}"
         job = bq_client.load_table_from_dataframe(
             df,
@@ -178,7 +181,7 @@ def main():
 
         # Pass 1: title + abstract
         pass1_texts = [
-            row.title + tokenizer.sep_token + (row.abstract or "")
+            (row.title or "") + tokenizer.sep_token + (row.abstract or "")
             for row in batch.itertuples()
         ]
         pass1_embs = encode_texts(pass1_texts, tokenizer, model, device)
@@ -191,7 +194,7 @@ def main():
 
         # Pass 2: title + abstract + keywords
         pass2_texts = [
-            row.title
+            (row.title or "")
             + tokenizer.sep_token
             + (row.abstract or "")
             + tokenizer.sep_token
