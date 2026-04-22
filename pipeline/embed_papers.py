@@ -118,7 +118,7 @@ def write_batch(
     keyword_rows: list[dict],
     embedding_rows: list[dict],
 ) -> None:
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(timezone.utc)
     for row in keyword_rows:
         row["extracted_at"] = now
     for row in embedding_rows:
