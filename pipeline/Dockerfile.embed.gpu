@@ -4,6 +4,7 @@ WORKDIR /app
 
 RUN pip install --no-cache-dir \
     "transformers==4.40.0" \
+    adapters \
     google-cloud-bigquery \
     google-cloud-bigquery-storage \
     pandas-gbq \

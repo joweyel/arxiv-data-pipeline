@@ -4,7 +4,8 @@ import numpy as np
 import pandas as pd
 from datetime import datetime, timezone
 from google.cloud import bigquery
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoTokenizer
+from adapters import AutoAdapterModel
 from tqdm import tqdm
 
 GCP_PROJECT_ID: str = os.environ["GCP_PROJECT_ID"]
@@ -13,6 +14,7 @@ BATCH_SIZE: int = int(os.getenv("BATCH_SIZE", "32"))
 TOP_N_KEYWORDS: int = int(os.getenv("TOP_N_KEYWORDS", "8"))
 BACKFILL_ALL: bool = os.getenv("BACKFILL_ALL", "").lower() == "true"
 MODEL_ID: str = "allenai/specter2_base"
+ADAPTER_ID: str = "allenai/specter2"
 PWC_TASKS_CSV: str = os.path.join(os.path.dirname(__file__), "data", "pwc_tasks.csv")
 
 KEYWORDS_TABLE: str = "paper_keywords"
@@ -44,7 +46,9 @@ def load_pwc_candidates() -> list[str]:
 
 def load_model(device: torch.device):
     tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
-    model = AutoModel.from_pretrained(MODEL_ID).to(device)
+    model = AutoAdapterModel.from_pretrained(MODEL_ID)
+    model.load_adapter(ADAPTER_ID, source="hf", load_as="proximity", set_active=True)
+    model = model.to(device)
     model.eval()
     return tokenizer, model
 
@@ -213,7 +217,7 @@ def main():
                     "arxiv_id": row.arxiv_id,
                     "keywords": [kw for kw, _ in kws],
                     "embedding": final_emb.tolist(),
-                    "model_version": MODEL_ID,
+                    "model_version": f"{MODEL_ID}+{ADAPTER_ID}",
                 }
             )
 
