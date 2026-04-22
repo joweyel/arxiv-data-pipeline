@@ -18,7 +18,7 @@ COPY embed_papers.py .
 COPY data/pwc_tasks.csv data/pwc_tasks.csv
 
 ENV GCP_PROJECT_ID=""
-ENV BQ_DATASET="ingestion_dataset"
+ENV BQ_DATASET="arxiv_dataset"
 ENV BATCH_SIZE="128"
 ENV TOP_N_KEYWORDS="8"
 ENV BACKFILL_ALL=""

@@ -9,7 +9,7 @@ from adapters import AutoAdapterModel
 from tqdm import tqdm
 
 GCP_PROJECT_ID: str = os.environ["GCP_PROJECT_ID"]
-BQ_DATASET: str = os.getenv("BQ_DATASET", "ingestion_dataset")
+BQ_DATASET: str = os.getenv("BQ_DATASET", "arxiv_dataset")
 BATCH_SIZE: int = int(os.getenv("BATCH_SIZE", "32"))
 TOP_N_KEYWORDS: int = int(os.getenv("TOP_N_KEYWORDS", "8"))
 BACKFILL_ALL: bool = os.getenv("BACKFILL_ALL", "").lower() == "true"
@@ -17,6 +17,8 @@ MODEL_ID: str = "allenai/specter2_base"
 ADAPTER_ID: str = "allenai/specter2"
 PWC_TASKS_CSV: str = os.path.join(os.path.dirname(__file__), "data", "pwc_tasks.csv")
 
+SOURCE_DATASET: str = "arxiv_dataset"
+SOURCE_TABLE: str = "fct_papers_embeddings"
 KEYWORDS_TABLE: str = "paper_keywords"
 EMBEDDINGS_TABLE: str = "paper_embeddings"
 
@@ -94,12 +96,12 @@ def fetch_papers_without_embeddings(bq_client: bigquery.Client) -> pd.DataFrame:
     if BACKFILL_ALL:
         query = f"""
             SELECT arxiv_id, title, abstract
-            FROM `{GCP_PROJECT_ID}.{BQ_DATASET}.papers`
+            FROM `{GCP_PROJECT_ID}.{SOURCE_DATASET}.{SOURCE_TABLE}`
         """
     else:
         query = f"""
             SELECT p.arxiv_id, p.title, p.abstract
-            FROM `{GCP_PROJECT_ID}.{BQ_DATASET}.papers` p
+            FROM `{GCP_PROJECT_ID}.{SOURCE_DATASET}.{SOURCE_TABLE}` p
             LEFT JOIN `{GCP_PROJECT_ID}.{BQ_DATASET}.{EMBEDDINGS_TABLE}` e
               ON p.arxiv_id = e.arxiv_id
             WHERE e.arxiv_id IS NULL

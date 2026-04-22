@@ -7,6 +7,8 @@ An end-to-end batch data engineering pipeline that ingests, transforms, and visu
 
 Built as the final project for [DE Zoomcamp 2026](https://github.com/DataTalksClub/data-engineering-zoomcamp).
 
+Beyond the course project, this repository is being extended with semantic search capabilities: SPECTER2 embeddings and Papers with Code keyword extraction for all papers, enabling vector similarity search and RAG pipelines over the full dataset. See [pipeline/EMBED.md](./pipeline/EMBED.md) for details.
+
 **Dashboard:** https://datastudio.google.com/reporting/2644e509-03e4-4404-bcc2-7891f89fcba1
 
 
