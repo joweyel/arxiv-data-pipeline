@@ -38,7 +38,7 @@ For incremental runs (only papers not yet embedded):
 | `BQ_DATASET`     | `arxiv_dataset` | BigQuery dataset for output tables                                    |
 | `BATCH_SIZE`     | `128`           | Papers per GPU batch                                                  |
 | `TOP_N_KEYWORDS` | `8`             | PwC keywords to extract per paper                                     |
-| `BACKFILL_ALL`   | ``              | Set to `true` to process all papers regardless of existing embeddings |
+| `BACKFILL_ALL`   | `""`            | Set to `true` to process all papers regardless of existing embeddings |
 
 ## PwC candidate list
 
