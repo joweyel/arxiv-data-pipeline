@@ -5,9 +5,24 @@ from datetime import datetime, date
 import pandas as pd
 from google.cloud import storage, bigquery
 
+
+def parse_blob_path(name: str) -> tuple[str, str] | None:
+    """Return (category, YYYYMM) for 'raw/arxiv/{cat}/{YYYYMM}.ndjson', else None."""
+    if not name.startswith("raw/arxiv/") or not name.endswith(".ndjson"):
+        return None
+    inner = name[len("raw/arxiv/") : -len(".ndjson")]  # e.g. "cs.CV/202603"
+    if "/" not in inner:
+        return None  # flat file, skip
+    cat, yyyymm = inner.rsplit("/", 1)
+    if not yyyymm.isdigit() or len(yyyymm) != 6:
+        return None
+    return cat, yyyymm
+
+
 GCS_BUCKET_NAME: str = os.getenv("GCS_BUCKET")
 GCP_PROJECT_ID: str = os.getenv("GCP_PROJECT_ID")
 BQ_DATASET: str = os.getenv("BQ_DATASET", "raw")
+CATEGORIES: set[str] = set(os.getenv("CATEGORIES", "cs.CV,cs.RO,cs.LG").split(","))
 START_YEAR: int = int(os.getenv("START_YEAR", "2000"))
 END_YEAR: int = int(os.getenv("END_YEAR", "2100"))
 START_MONTH: int = int(os.getenv("START_MONTH", "1"))
@@ -154,6 +169,9 @@ def merge_data_bigquery(
     df = pd.DataFrame(rows).drop(columns=["published", "updated"], errors="ignore")
     df["date_published"] = pd.to_datetime(df["date_published"]).dt.date
     df["date_updated"] = pd.to_datetime(df["date_updated"]).dt.date
+    df = df.sort_values("date_updated").drop_duplicates(
+        subset=["arxiv_id"], keep="last"
+    )
 
     job = bq_client.load_table_from_dataframe(
         df,
@@ -206,7 +224,7 @@ def load_month(
     bq_client: bigquery.Client,
     data_date: str,
 ) -> None:
-    """Load a single month's NDJSON from GCS, add derived columns, and MERGE into BigQuery.
+    """Load all category NDJSON files for one month from GCS and MERGE into BigQuery.
 
     Parameters
     ----------
@@ -217,14 +235,21 @@ def load_month(
     data_date: str
         Month identifier in YYYYMM format (e.g. "202201").
     """
-
-    destination_blob_name = f"raw/arxiv/{data_date}.ndjson"
-    if not blob_exists_gcs(storage_client, destination_blob_name):
+    blobs_for_month = [
+        b.name
+        for b in storage_client.list_blobs(GCS_BUCKET_NAME, prefix="raw/arxiv/")
+        if (parsed := parse_blob_path(b.name)) is not None
+        and parsed[0] in CATEGORIES
+        and parsed[1] == data_date
+    ]
+    if not blobs_for_month:
         print(f"Skip {data_date} (not in GCS)")
         return
-    print(f"Loading {destination_blob_name}", flush=True)
-    papers = load_from_gcs(storage_client, destination_blob_name)
-    rows = [add_columns(paper) for paper in papers]
+    all_papers = []
+    for blob_name in blobs_for_month:
+        print(f"Loading {blob_name}", flush=True)
+        all_papers.extend(load_from_gcs(storage_client, blob_name))
+    rows = [add_columns(paper) for paper in all_papers]
     merge_data_bigquery(bq_client, rows, data_date)
     print(f"DONE: {len(rows)} papers for {data_date}")
 
@@ -234,17 +259,23 @@ def main():
     bq_client = bigquery.Client(project=GCP_PROJECT_ID)
 
     if "START_DATE" not in os.environ:
-        # List only blobs within the configured date range
-        def in_range(name: str) -> bool:
-            stem = name.split("/")[-1].replace(".ndjson", "")
-            return START_PERIOD <= int(stem) <= END_PERIOD
+
+        def in_scope(name: str) -> bool:
+            parsed = parse_blob_path(name)
+            if parsed is None:
+                return False
+            cat, yyyymm = parsed
+            return cat in CATEGORIES and START_PERIOD <= int(yyyymm) <= END_PERIOD
 
         blobs = sorted(
             b.name
             for b in storage_client.list_blobs(GCS_BUCKET_NAME, prefix="raw/arxiv/")
-            if b.name.endswith(".ndjson") and in_range(b.name)
+            if in_scope(b.name)
         )
-        print(f"Found {len(blobs)} monthly files.", flush=True)
+        print(
+            f"Found {len(blobs)} monthly files for categories {sorted(CATEGORIES)}.",
+            flush=True,
+        )
         if BULK_LOAD:
             # Collect all rows into memory, then do a single MERGE (faster, higher RAM)
             all_rows = []
@@ -254,9 +285,11 @@ def main():
             print(f"Total rows: {len(all_rows)}", flush=True)
             merge_data_bigquery(bq_client, all_rows, "bulk")
         else:
-            # One MERGE per month (slower, lower RAM -- use on memory-constrained VMs)
-            for name in blobs:
-                data_date = name.split("/")[-1].replace(".ndjson", "")
+            # One MERGE per unique month (slower, lower RAM -- use on memory-constrained VMs)
+            months_seen = sorted(
+                {name.split("/")[-1].replace(".ndjson", "") for name in blobs}
+            )
+            for data_date in months_seen:
                 load_month(storage_client, bq_client, data_date)
     else:
         # Single-month mode: load exactly the month derived from START_DATE

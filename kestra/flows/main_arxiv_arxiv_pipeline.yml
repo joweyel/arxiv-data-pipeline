@@ -2,11 +2,17 @@ id: arxiv_pipeline
 namespace: arxiv
 description: Daily ArXiv ingestion - fetch current month, load to BigQuery, run dbt
 
+inputs:
+  - id: categories
+    type: STRING
+    defaults: "cs.CV,cs.RO,cs.LG"
+    description: "Comma-separated ArXiv categories to fetch (e.g. cs.CV,cs.RO,cs.LG)"
+
 variables:
   gcs_bucket: "{{ kv('GCS_BUCKET') }}"
   gcp_project_id: "{{ kv('GCP_PROJECT_ID') }}"
   bq_dataset: "{{ kv('BQ_DATASET') }}"
-  categories: "{{ kv('CATEGORIES') }}"
+  categories: "{{ inputs.categories }}"
   start_date: "{{ trigger.date | date('yyyy-MM') }}-01T00:00:00.000000000Z"
   end_date: "{{ trigger.date | date('yyyy-MM-dd') }}T23:59:00.000000000Z"
 
@@ -51,6 +57,7 @@ tasks:
       GCP_PROJECT_ID: "{{ vars.gcp_project_id }}"
       BQ_DATASET: "{{ vars.bq_dataset }}"
       START_DATE: "{{ vars.start_date }}"
+      CATEGORIES: "{{ vars.categories }}"
 
   - id: dbt_run
     type: io.kestra.plugin.dbt.cli.DbtCLI

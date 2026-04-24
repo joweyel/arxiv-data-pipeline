@@ -18,6 +18,10 @@ inputs:
   - id: bulk_load
     type: BOOLEAN
     defaults: true
+  - id: categories
+    type: STRING
+    defaults: "cs.CV,cs.RO,cs.LG"
+    description: "Comma-separated ArXiv categories to ingest (e.g. cs.CV,cs.RO,cs.LG)"
 
 tasks:
   - id: kaggle_backfill
@@ -30,7 +34,7 @@ tasks:
         - "{{ kv('DATA_DIR') }}:/data"
     beforeCommands:
       - printf '%s' "$GCP_SA_JSON" > /tmp/sa.json
-      - pip install -q google-cloud-storage kaggle tqdm
+      - pip install -q google-cloud-storage kaggle
     commands:
       - python pipeline/kaggle_to_gcs.py
     env:
@@ -38,7 +42,7 @@ tasks:
       GCP_SA_JSON: "{{ secret('GCP_SA_JSON') }}"
       KAGGLE_JSONL: "/data/arxiv-metadata-oai-snapshot.zip"
       GCS_BUCKET: "{{ kv('GCS_BUCKET') }}"
-      CATEGORIES: "{{ kv('CATEGORIES') }}"
+      CATEGORIES: "{{ inputs.categories }}"
       START_YEAR: "{{ inputs.start_year }}"
       END_YEAR: "{{ inputs.end_year }}"
       START_MONTH: "{{ inputs.start_month }}"
@@ -70,6 +74,7 @@ tasks:
       START_MONTH: "{{ inputs.start_month }}"
       END_MONTH: "{{ inputs.end_month }}"
       BULK_LOAD: "{{ inputs.bulk_load }}"
+      CATEGORIES: "{{ inputs.categories }}"
 
   - id: dbt_run
     type: io.kestra.plugin.dbt.cli.DbtCLI

@@ -7,12 +7,11 @@ from datetime import datetime
 from email.utils import parsedate_to_datetime
 
 from google.cloud import storage
-from tqdm import tqdm
 from kaggle.api.kaggle_api_extended import KaggleApi
 
 KAGGLE_JSONL: str = os.environ["KAGGLE_JSONL"]
 GCS_BUCKET_NAME: str = os.getenv("GCS_BUCKET")
-CATEGORIES: list[str] = os.getenv("CATEGORIES", "cs.CV,cs.RO").split(",")
+CATEGORIES: list[str] = os.getenv("CATEGORIES", "cs.CV,cs.RO,cs.LG").split(",")
 START_YEAR: int = int(os.getenv("START_YEAR", "2022"))
 END_YEAR: int = int(os.getenv("END_YEAR", "2022"))
 START_MONTH: int = int(os.getenv("START_MONTH", "1"))
@@ -74,7 +73,8 @@ def upload_to_gcs(
     blob = bucket.blob(destination_blob_name)
     blob.upload_from_string(ndjson, content_type="application/x-ndjson")
     print(
-        f"Uploaded {len(papers)} papers to gs://{GCS_BUCKET_NAME}/{destination_blob_name}."
+        f"Uploaded {len(papers)} papers to gs://{GCS_BUCKET_NAME}/{destination_blob_name}.",
+        flush=True,
     )
 
 
@@ -92,8 +92,8 @@ def convert_entry(entry: dict) -> dict | None:
         Converted paper dict, or None if entry should be skipped.
     """
     entry_categories = entry.get("categories", "").split()
-    # Entry only processed if in required category
-    if not set(CATEGORIES) & set(entry_categories):
+    primary = entry_categories[0] if entry_categories else None
+    if primary not in CATEGORIES:
         return None
 
     versions: list = entry.get("versions", [])
@@ -116,7 +116,7 @@ def convert_entry(entry: dict) -> dict | None:
         "title": entry.get("title", "").replace("\n", " ").strip(),
         "abstract": entry.get("abstract", "").replace("\n", " ").strip(),
         "authors": authors,
-        "primary_category": entry_categories[0],
+        "primary_category": primary,
         "all_categories": entry_categories,
         "published": published,
         "updated": entry.get("update_date")
@@ -164,40 +164,39 @@ def main():
     download_kaggle_dataset(KAGGLE_JSONL)
     storage_client = storage.Client()
 
-    # { "202201": [{"arxiv_id": "2201.00001", ...}, ...], ... }
-    months: dict[str, list[dict]] = defaultdict(list)
+    # { ("cs.CV", "202201"): [...], ("cs.LG", "202201"): [...], ... }
+    by_cat_month: dict[tuple[str, str], list[dict]] = defaultdict(list)
 
     print(f"Reading {KAGGLE_JSONL} ...", flush=True)
     with open_kaggle_file(KAGGLE_JSONL) as f:
-        # Iterating over JSONL lines (1 json-object per line)
-        for line in tqdm(f, desc="Reading Paper data"):
+        for i, line in enumerate(f):
             line = line.strip()
             if not line:
                 continue
-
             try:
                 entry = json.loads(line)
             except json.JSONDecodeError:
                 continue
-
-            # Converting paper entry to consistent format
             paper = convert_entry(entry)
             if paper:
-                # "YYYYMM" format key
                 month_key = datetime.fromisoformat(paper["published"]).strftime("%Y%m")
-                months[month_key].append(paper)
+                by_cat_month[(paper["primary_category"], month_key)].append(paper)
+            if i % 200_000 == 0 and i > 0:
+                print(f"  {i:,} records scanned ...", flush=True)
 
-    print(f"Done reading. Uploading {len(months)} monthly files to GCS ...", flush=True)
+    print(
+        f"Done reading. Uploading {len(by_cat_month)} category/month files to GCS ...",
+        flush=True,
+    )
 
-    for month, papers in sorted(months.items()):
-        # (Example) month: "202201", papers: [{"arxiv_id": "2201.00001", ...}, ...]
-        destination_blob_name = f"raw/arxiv/{month}.ndjson"
+    for (cat, month), papers in sorted(by_cat_month.items()):
+        destination_blob_name = f"raw/arxiv/{cat}/{month}.ndjson"
         if not FORCE_FETCH and blob_exists_gcs(storage_client, destination_blob_name):
-            print(f"Skip {month} (already in GCS)")
+            print(f"Skip {cat}/{month} (already in GCS)")
             continue
         upload_to_gcs(storage_client, destination_blob_name, papers)
 
-    print("Done.")
+    print("Done.", flush=True)
 
 
 if __name__ == "__main__":

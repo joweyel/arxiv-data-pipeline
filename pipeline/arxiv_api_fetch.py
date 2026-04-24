@@ -7,7 +7,7 @@ import arxiv
 from google.cloud import storage
 
 GCS_BUCKET_NAME: str = os.getenv("GCS_BUCKET")
-CATEGORIES: list[str] = os.getenv("CATEGORIES", "cs.CV,cs.RO").split(",")
+CATEGORIES: list[str] = os.getenv("CATEGORIES", "cs.CV,cs.RO,cs.LG").split(",")
 MAX_RESULTS = int(os.getenv("MAX_RESULTS", 0)) or float("inf")
 FORCE_FETCH: bool = os.getenv("FORCE_FETCH", "").lower() == "true"
 
@@ -89,24 +89,24 @@ def save_local(papers: list[dict], path: str) -> None:
     print(f"Saved {len(papers)} papers to {path}")
 
 
-def fetch_arxiv_data(start_date: str, end_date: str) -> list[dict]:
-    """Fetch all publications in the specified date range.
+def fetch_arxiv_data(category: str, start_date: str, end_date: str) -> list[dict]:
+    """Fetch publications for a single category in the specified date range.
 
     Parameters
     ----------
+    category: str
+        ArXiv category to fetch (e.g. "cs.CV").
     start_date: str
-        Date from which publications should be obtained from the api.
+        Start of the date range in ArXiv format (YYYYMMDDHHMM).
     end_date: str
-        Date until which dates should be obtained from the api.
+        End of the date range in ArXiv format (YYYYMMDDHHMM).
 
     Returns
     -------
     list[dict]
         List of dictionaries containing paper metadata.
     """
-
-    category_query = " OR ".join(f"cat:{cat}" for cat in CATEGORIES)
-    query = f"({category_query}) AND submittedDate:[{start_date} TO {end_date}]"
+    query = f"cat:{category} AND submittedDate:[{start_date} TO {end_date}]"
 
     search = arxiv.Search(
         query=query,
@@ -115,13 +115,9 @@ def fetch_arxiv_data(start_date: str, end_date: str) -> list[dict]:
         sort_order=arxiv.SortOrder.Ascending,
     )
 
-    # query the ArXiv database
-    results = client.results(search)
-
     papers: list[dict] = []
-
-    for result in results:
-        short_id = result.get_short_id()  # gets the arxiv id (e.g. `2107.05580v1`)
+    for result in client.results(search):
+        short_id = result.get_short_id()
         version_match = re.search(r"v(\d+)$", short_id)
         version = version_match.group(1) if version_match else None
         papers.append(
@@ -150,23 +146,28 @@ def main():
 
     print(f"Fetching data in time interval: [{start_date}] to [{end_date}]", flush=True)
 
-    # LOCAL MODE
     if output_dir:
-        local_path = os.path.join(output_dir, f"{start_date[:6]}.ndjson")
-        if papers := fetch_arxiv_data(start_date, end_date):
-            save_local(papers, local_path)
-        else:
-            print("No papers found for the specified interval")
+        for cat in CATEGORIES:
+            cat_dir = os.path.join(output_dir, cat)
+            os.makedirs(cat_dir, exist_ok=True)
+            local_path = os.path.join(cat_dir, f"{start_date[:6]}.ndjson")
+            if papers := fetch_arxiv_data(cat, start_date, end_date):
+                save_local(papers, local_path)
+            else:
+                print(f"No papers found for {cat}")
     else:  # CLOUD MODE
         storage_client = storage.Client()
-        destination_blob_name: str = f"raw/arxiv/{start_date[:6]}.ndjson"
-        if not FORCE_FETCH and blob_exists_gcs(storage_client, destination_blob_name):
-            print(f"Skip {start_date[:6]} (already in GCS)")
-            return
-        if papers := fetch_arxiv_data(start_date, end_date):
-            upload_to_gcs(storage_client, destination_blob_name, papers)
-        else:
-            print("No papers found for the specified interval")
+        for cat in CATEGORIES:
+            destination_blob_name = f"raw/arxiv/{cat}/{start_date[:6]}.ndjson"
+            if not FORCE_FETCH and blob_exists_gcs(
+                storage_client, destination_blob_name
+            ):
+                print(f"Skip {cat}/{start_date[:6]} (already in GCS)")
+                continue
+            if papers := fetch_arxiv_data(cat, start_date, end_date):
+                upload_to_gcs(storage_client, destination_blob_name, papers)
+            else:
+                print(f"No papers found for {cat}")
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ docker build -f "${REPO_ROOT}/pipeline/Dockerfile.embed.gpu" \
 
 docker run --rm --gpus all \
   -e GCP_PROJECT_ID="${GCP_PROJECT_ID:-arxiv-data-pipeline}" \
-  -e BQ_DATASET="${BQ_DATASET:-ingestion_dataset}" \
+  -e BQ_DATASET="${BQ_DATASET:-arxiv_dataset}" \
   -e BATCH_SIZE="${BATCH_SIZE:-128}" \
   -e TOP_N_KEYWORDS="${TOP_N_KEYWORDS:-8}" \
   -e BACKFILL_ALL="${BACKFILL_ALL:-}" \
