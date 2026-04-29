@@ -13,4 +13,6 @@ dependencies = [
     "pandas-gbq>=0.26.1",
     "dbt-bigquery>=1.8.0",
     "pre-commit>=4.5.1",
+    "jupyter>=1.1.1",
+    "notebook>=7.5.5",
 ]

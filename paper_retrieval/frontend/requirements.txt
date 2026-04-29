@@ -1,0 +1,15 @@
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+streamlit
+google-cloud-bigquery
+google-cloud-bigquery-storage
+db-dtypes
+pandas
+plotly
+# Torch, HF and LLM-packages
+torch
+transformers
+adapters
+langgraph
+anthropic
+openai

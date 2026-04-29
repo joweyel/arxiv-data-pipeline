@@ -3,7 +3,7 @@ FROM pytorch/pytorch:2.3.0-cuda12.1-cudnn8-runtime
 WORKDIR /app
 
 RUN pip install --no-cache-dir \
-    "transformers==4.40.0" \
+    transformers \
     adapters \
     google-cloud-bigquery \
     google-cloud-bigquery-storage \
