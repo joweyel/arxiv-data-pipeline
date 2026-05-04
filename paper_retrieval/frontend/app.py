@@ -56,5 +56,6 @@ if st.button("Search") and query:
         st.write(answer)
         st.divider()
 
+    # Dataframe (can be exported as csv)
     st.subheader(f"Retrieved Papers ({len(results)})")
     st.dataframe(pd.DataFrame(results))

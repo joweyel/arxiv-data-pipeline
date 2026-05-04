@@ -100,5 +100,6 @@ variable "github_sa_roles_list" {
     "roles/artifactregistry.writer",
     "roles/run.developer",
     "roles/iam.serviceAccountUser",
+    "roles/iam.serviceAccountTokenCreator",
   ]
 }
