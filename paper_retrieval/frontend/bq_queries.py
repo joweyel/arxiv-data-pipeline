@@ -82,8 +82,7 @@ def vector_search(
         LIMIT
             {top_k}
     """
-    # BQ-Vector Search:
-    # https://docs.cloud.google.com/bigquery/docs/reference/standard-sql/search_functions#vector_search
+    # BQ-Vector Search: https://docs.cloud.google.com/bigquery/docs/reference/standard-sql/search_functions#vector_search
 
     job_config = bigquery.QueryJobConfig(
         query_parameters=[
