@@ -1,15 +1,21 @@
 --extra-index-url https://download.pytorch.org/whl/cpu
 
+# Streamlit UI
 streamlit
+pandas
+
+# BigQuery
 google-cloud-bigquery
 google-cloud-bigquery-storage
 db-dtypes
-pandas
-plotly
-# Torch, HF and LLM-packages
+
+# Embeddings
 torch
 transformers
 adapters
+
+# LangChain / LangGraph
+langchain-core
+langchain-openai
+langchain-classic
 langgraph
-anthropic
-openai

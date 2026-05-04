@@ -172,17 +172,23 @@ resource "google_compute_firewall" "kestra_firewall" {
 # Cloudrun
 resource "google_cloud_run_v2_service" "st_dashboard" {
   project             = var.project_id
-  name                = "arxiv-streamlit-dashboard"
+  name                = "arxiv-paper-retrieval"
   location            = var.region
   deletion_protection = !var.force_destroy_resource
   ingress             = "INGRESS_TRAFFIC_ALL"
 
   template {
     containers {
-      name  = "streamlit-bi-dashboard"
+      name  = "arxiv-paper-retrieval"
       image = "us-docker.pkg.dev/cloudrun/container/hello" # placeholder; replaced by GitHub Actions on first deploy
       ports {
         container_port = 8501
+      }
+      resources {
+        limits = {
+          memory = "4Gi"
+          cpu    = "2"
+        }
       }
     }
     service_account = google_service_account.cloudrun_sa.email

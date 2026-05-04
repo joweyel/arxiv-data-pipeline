@@ -297,7 +297,8 @@ gh secret set GCP_SA_KEY --body "$(base64 -w 0 credentials/github-sa.json)"
 gh secret set GCP_PROJECT_ID --body "${PROJECT}"
 gh secret set GCP_REGION --body "${REGION}"
 gh secret set ARTIFACT_REGISTRY_REPO --body "arxiv-pipeline"
-gh secret set CLOUD_RUN_SERVICE_NAME --body "arxiv-streamlit-dashboard"
+gh secret set CLOUD_RUN_SERVICE_NAME --body "arxiv-paper-retrieval"
+gh secret set OPENAI_API_KEY --body "your-openai-api-key"
 ```
 
 </details>

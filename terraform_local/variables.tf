@@ -28,6 +28,8 @@ variable "gcp_service_apis" {
     "cloudresourcemanager.googleapis.com",
     "storage.googleapis.com",
     "bigquery.googleapis.com",
+    "artifactregistry.googleapis.com",
+    "run.googleapis.com",
   ]
 }
 
@@ -79,5 +81,24 @@ variable "pipeline_sa_roles_list" {
     "roles/bigquery.dataEditor",
     "roles/bigquery.jobUser",
     "roles/storage.objectAdmin",
+  ]
+}
+
+variable "cloudrun_sa_roles_list" {
+  description = "Roles for the Cloud Run service account"
+  type        = list(string)
+  default = [
+    "roles/bigquery.dataViewer",
+    "roles/bigquery.jobUser",
+  ]
+}
+
+variable "github_sa_roles_list" {
+  description = "Roles for the GitHub Actions service account"
+  type        = list(string)
+  default = [
+    "roles/artifactregistry.writer",
+    "roles/run.developer",
+    "roles/iam.serviceAccountUser",
   ]
 }

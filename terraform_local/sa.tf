@@ -22,3 +22,43 @@ resource "google_project_iam_member" "pipeline_sa_roles" {
   member     = "serviceAccount:${google_service_account.pipeline_sa.email}"
   depends_on = [google_project_service.required_apis]
 }
+
+resource "google_service_account" "cloudrun_sa" {
+  project      = var.project_id
+  account_id   = "cloudrun-sa"
+  display_name = "Cloud Run Service Account"
+  depends_on   = [google_project_service.required_apis]
+}
+
+resource "google_project_iam_member" "cloudrun_sa_roles" {
+  for_each   = toset(var.cloudrun_sa_roles_list)
+  project    = var.project_id
+  role       = each.value
+  member     = "serviceAccount:${google_service_account.cloudrun_sa.email}"
+  depends_on = [google_project_service.required_apis]
+}
+
+resource "google_service_account" "github_sa" {
+  project      = var.project_id
+  account_id   = "github-sa"
+  display_name = "GitHub Actions Service Account"
+  depends_on   = [google_project_service.required_apis]
+}
+
+resource "google_service_account_key" "github_sa_key" {
+  service_account_id = google_service_account.github_sa.name
+}
+
+resource "local_file" "github_sa_key_file" {
+  content         = base64decode(google_service_account_key.github_sa_key.private_key)
+  filename        = "${path.module}/../credentials/github-sa.json"
+  file_permission = "0600"
+}
+
+resource "google_project_iam_member" "github_sa_roles" {
+  for_each   = toset(var.github_sa_roles_list)
+  project    = var.project_id
+  role       = each.value
+  member     = "serviceAccount:${google_service_account.github_sa.email}"
+  depends_on = [google_project_service.required_apis]
+}

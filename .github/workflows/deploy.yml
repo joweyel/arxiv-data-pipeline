@@ -8,7 +8,7 @@ on:
 
 env:
   REGION: ${{ secrets.GCP_REGION }}
-  IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.ARTIFACT_REGISTRY_REPO }}/dashboard:${{ github.event.workflow_run.head_sha }}
+  IMAGE: ${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.ARTIFACT_REGISTRY_REPO }}/paper-retrieval:${{ github.event.workflow_run.head_sha }}
 
 jobs:
   deploy:
@@ -26,11 +26,11 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
           filters: |
-            dashboard:
-              - 'dashboard/**'
+            paper_retrieval:
+              - 'paper_retrieval/**'
 
       - name: GCP Authentication
-        if: steps.changes.outputs.dashboard == 'true'
+        if: steps.changes.outputs.paper_retrieval == 'true'
         id: auth
         uses: google-github-actions/auth@v2
         with:
@@ -38,7 +38,7 @@ jobs:
           token_format: access_token
 
       - name: Docker login to Artifact Registry
-        if: steps.changes.outputs.dashboard == 'true'
+        if: steps.changes.outputs.paper_retrieval == 'true'
         uses: docker/login-action@v3
         with:
           username: oauth2accesstoken
@@ -46,22 +46,27 @@ jobs:
           registry: ${{ secrets.GCP_REGION }}-docker.pkg.dev
 
       - name: Build and push Docker Container
-        if: steps.changes.outputs.dashboard == 'true'
+        if: steps.changes.outputs.paper_retrieval == 'true'
         run: |
-          docker build -t ${{ env.IMAGE }} ./dashboard
+          docker build -t ${{ env.IMAGE }} -f paper_retrieval/Dockerfile.full ./paper_retrieval
           docker push ${{ env.IMAGE }}
 
       - name: Deploy to Cloud Run
-        if: steps.changes.outputs.dashboard == 'true'
+        if: steps.changes.outputs.paper_retrieval == 'true'
+        id: deploy
         uses: google-github-actions/deploy-cloudrun@v2
         with:
           service: ${{ secrets.CLOUD_RUN_SERVICE_NAME }}
           region: ${{ secrets.GCP_REGION }}
           image: ${{ env.IMAGE }}
+          env_vars: |
+            GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}
+            BQ_DATASET=arxiv_dataset
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
 
       - name: Show deployed URL
-        if: steps.changes.outputs.dashboard == 'true'
-        run: echo "Dashboard deployed to ${{ steps.deploy.outputs.url }}"
+        if: steps.changes.outputs.paper_retrieval == 'true'
+        run: echo "Paper retrieval app deployed to ${{ steps.deploy.outputs.url }}"
 
   # Kestra-related deploy steps (https://github.com/kestra-io/deploy-action)
   # https://github.com/kestra-io/github-actions

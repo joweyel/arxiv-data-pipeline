@@ -21,3 +21,13 @@ output "pipeline_sa_email" {
   description = "Service account email for local pipeline runs"
   value       = local.pipeline_sa_email
 }
+
+output "docker_registry" {
+  description = "Artifact Registry path for Docker images"
+  value       = "${var.region}-docker.pkg.dev/${var.project_id}/arxiv-pipeline"
+}
+
+output "paper_retrieval_url" {
+  description = "Public URL of the paper retrieval app on Cloud Run"
+  value       = google_cloud_run_v2_service.paper_retrieval.uri
+}
