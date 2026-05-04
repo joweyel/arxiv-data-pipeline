@@ -25,6 +25,7 @@ jobs:
         uses: dorny/paths-filter@v3
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
+          base: ${{ github.event.workflow_run.head_sha }}^
           filters: |
             paper_retrieval:
               - 'paper_retrieval/**'
@@ -83,6 +84,7 @@ jobs:
         uses: dorny/paths-filter@v3
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
+          base: ${{ github.event.workflow_run.head_sha }}^
           filters: |
             kestra:
               - 'kestra/**'
