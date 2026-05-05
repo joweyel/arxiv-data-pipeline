@@ -288,7 +288,7 @@ gcloud iam service-accounts keys create credentials/github-sa.json \
 | `GCP_PROJECT_ID` | your project ID |
 | `GCP_REGION` | e.g. `europe-west1` |
 | `ARTIFACT_REGISTRY_REPO` | `arxiv-pipeline` |
-| `CLOUD_RUN_SERVICE_NAME` | `arxiv-streamlit-dashboard` |
+| `CLOUD_RUN_SERVICE_NAME` | `arxiv-paper-retrieval` |
 
 Via gh CLI:
 
