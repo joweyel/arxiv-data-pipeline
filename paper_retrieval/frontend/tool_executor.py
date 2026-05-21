@@ -14,6 +14,7 @@ def set_search_context(
     start_year: int,
     end_year: int,
     top_k: int = 10,
+    surveys_only: bool = False,
 ) -> None:
     """Set the search context for the current query.
 
@@ -27,6 +28,8 @@ def set_search_context(
         Latest publication year.
     top_k: int (default: 10, optional)
         Number of papers to retrieve per tool call. Default is 10.
+    surveys_only: bool (default: False, optional)
+        Whether to restrict results to survey/overview papers.
     """
     global _search_context
     _search_context = {
@@ -34,13 +37,12 @@ def set_search_context(
         "start_year": start_year,
         "end_year": end_year,
         "top_k": top_k,
+        "surveys_only": surveys_only,
     }
 
 
 def run_vector_search(
     query: str,
-    surveys_only: bool = False,
-    **kwargs,
 ) -> str:
     """Run BQ VECTOR_SEARCH with SPECTER2 + HyDE embeddings.
 
@@ -48,8 +50,6 @@ def run_vector_search(
     ----------
     query: str
         Search query.
-    surveys_only: bool (default: False, optional)
-        If True, restrict results to survey/overview papers.
 
     Returns
     -------
@@ -66,7 +66,7 @@ def run_vector_search(
         start_year=context["start_year"],
         end_year=context["end_year"],
         top_k=context.get("top_k", 10),
-        surveys_only=surveys_only,
+        surveys_only=context.get("surveys_only", False),
     )
     return json.dumps(results, default=str)
 

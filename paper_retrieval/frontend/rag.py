@@ -51,6 +51,7 @@ def ask(
     start_year: int,
     end_year: int,
     top_k: int = 10,
+    surveys_only: bool = False,
 ) -> tuple[str, list[dict]]:
     """Run the LangGraph agent on a research question and return answer with sources.
 
@@ -66,13 +67,15 @@ def ask(
         Latest publication year.
     top_k: int (default: 10, optional)
         Number of papers to retrieve per tool call.
+    surveys_only: bool (default: False, optional)
+        Whether to restrict results to survey/overview papers.
 
     Returns
     -------
     tuple[str, list[dict]]
         Generated answer string and list of retrieved papers.
     """
-    set_search_context(categories, start_year, end_year, top_k)
+    set_search_context(categories, start_year, end_year, top_k, surveys_only)
 
     result = graph.invoke(
         {

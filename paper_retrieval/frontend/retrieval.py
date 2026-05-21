@@ -2,6 +2,8 @@ import os
 import torch
 import streamlit as st
 
+from schemas import QueryIntent, INTENT_PROMPT, model_fields
+
 # HF
 from transformers import AutoTokenizer
 from adapters import AutoAdapterModel
@@ -17,7 +19,7 @@ ADAPTER_ID: str = "allenai/specter2"
 
 
 @st.cache_resource
-def load_specter2_model():
+def load_specter2_model() -> tuple[AutoTokenizer, AutoAdapterModel]:
     """Load SPECTER2 base model with proximity adapter.
 
     Returns
@@ -32,6 +34,24 @@ def load_specter2_model():
     model = model.to(device)
     model.eval()
     return tokenizer, model
+
+
+@st.cache_resource
+def get_intent_parser():
+    """Build a cached intent parsing chain for structured query understanding.
+
+    Returns
+    -------
+    Runnable
+        LangChain chain that accepts {"query": str} and returns a QueryIntent.
+
+    Examples
+    --------
+    >>> intent = get_intent_parser().invoke({"query": "CVPR 2023 diffusion models with code"})
+    """
+    llm = ChatOpenAI(model="gpt-4o-mini", api_key=os.getenv("OPENAI_API_KEY"))
+    prompt = INTENT_PROMPT.partial(fields=model_fields(QueryIntent))
+    return prompt | llm.with_structured_output(QueryIntent)
 
 
 @torch.no_grad()
@@ -135,6 +155,7 @@ def search(
     end_year: int,
     top_k: int = 10,
     use_hyde: bool = True,
+    surveys_only: bool = False,
 ) -> list[dict]:
     """Search papers that are semantically relevant to the input query.
 
@@ -152,6 +173,8 @@ def search(
         Number of top results to return.
     use_hyde: bool (default: True, optional)
         Wether to use a HyDE Query before Embedding or not.
+    surveys_only: bool (default: False, optional)
+        Whether to return only survey/overview papers.
 
     Returns
     -------
@@ -169,4 +192,6 @@ def search(
 
     embedder = get_embedder(use_hyde)
     embedding = embedder.embed_query(query)
-    return vector_search(embedding, categories, start_year, end_year, top_k)
+    return vector_search(
+        embedding, categories, start_year, end_year, top_k, surveys_only
+    )

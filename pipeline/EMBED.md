@@ -4,10 +4,12 @@ Generates semantic embeddings and PwC keyword mappings for all arXiv papers in t
 
 ## What it does
 
-Two-pass pipeline per paper:
+Per paper:
 
 1. **Pass 1**: encode `title + abstract` with SPECTER2 + proximity adapter, then match against the Papers with Code task taxonomy using cosine similarity to extract the top-N most relevant task keywords
-2. **Pass 2**: encode `title + abstract + keywords` to produce a final embedding enriched with the keyword signal
+2. **Pass 2** (optional): encode `title + abstract + keywords` to produce a final embedding enriched with the keyword signal - only active when `USE_KEYWORD_AUGMENTATION=true`
+
+By default only Pass 1 is used. The extracted keywords are always written to `paper_keywords` regardless of whether augmentation is enabled.
 
 Source table: `arxiv_dataset.fct_papers_embeddings`
 
@@ -38,7 +40,8 @@ For incremental runs (only papers not yet embedded):
 | `BQ_DATASET`     | `arxiv_dataset` | BigQuery dataset for output tables                                    |
 | `BATCH_SIZE`     | `128`           | Papers per GPU batch                                                  |
 | `TOP_N_KEYWORDS` | `8`             | PwC keywords to extract per paper                                     |
-| `BACKFILL_ALL`   | `""`            | Set to `true` to process all papers regardless of existing embeddings |
+| `BACKFILL_ALL`              | `""`            | Set to `true` to process all papers regardless of existing embeddings |
+| `USE_KEYWORD_AUGMENTATION` | `false`         | Set to `true` to enable Pass 2 (keyword-enriched embeddings)          |
 
 ## PwC candidate list
 

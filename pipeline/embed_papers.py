@@ -13,6 +13,9 @@ BQ_DATASET: str = os.getenv("BQ_DATASET", "arxiv_dataset")
 BATCH_SIZE: int = int(os.getenv("BATCH_SIZE", "32"))
 TOP_N_KEYWORDS: int = int(os.getenv("TOP_N_KEYWORDS", "8"))
 BACKFILL_ALL: bool = os.getenv("BACKFILL_ALL", "").lower() == "true"
+USE_KEYWORD_AUGMENTATION: bool = (
+    os.getenv("USE_KEYWORD_AUGMENTATION", "false").lower() == "true"
+)
 MODEL_ID: str = "allenai/specter2_base"
 ADAPTER_ID: str = "allenai/specter2"
 PWC_TASKS_CSV: str = os.path.join(os.path.dirname(__file__), "data", "pwc_tasks.csv")
@@ -198,18 +201,21 @@ def main():
             kws = top_keywords(doc_emb, candidate_embs, candidates, TOP_N_KEYWORDS)
             batch_keywords.append(kws)
 
-        # Pass 2: title + abstract + keywords
-        pass2_texts = [
-            (row.title or "")
-            + tokenizer.sep_token
-            + (row.abstract or "")
-            + tokenizer.sep_token
-            + " ".join(kw for kw, _ in kws)
-            for row, kws in zip(batch.itertuples(), batch_keywords)
-        ]
-        pass2_embs = encode_texts(pass2_texts, tokenizer, model, device)
+        # Pass 2: title + abstract + keywords (only if augmentation is enabled)
+        if USE_KEYWORD_AUGMENTATION:
+            pass2_texts = [
+                (row.title or "")
+                + tokenizer.sep_token
+                + (row.abstract or "")
+                + tokenizer.sep_token
+                + " ".join(kw for kw, _ in kws)
+                for row, kws in zip(batch.itertuples(), batch_keywords)
+            ]
+            final_embs = encode_texts(pass2_texts, tokenizer, model, device)
+        else:
+            final_embs = pass1_embs
 
-        for row, kws, final_emb in zip(batch.itertuples(), batch_keywords, pass2_embs):
+        for row, kws, final_emb in zip(batch.itertuples(), batch_keywords, final_embs):
             for kw, score in kws:
                 keyword_rows.append(
                     {"arxiv_id": row.arxiv_id, "keyword": kw, "score": score}
