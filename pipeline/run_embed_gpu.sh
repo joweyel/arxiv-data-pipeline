@@ -14,5 +14,6 @@ docker run --rm --gpus all \
   -e BATCH_SIZE="${BATCH_SIZE:-128}" \
   -e TOP_N_KEYWORDS="${TOP_N_KEYWORDS:-8}" \
   -e BACKFILL_ALL="${BACKFILL_ALL:-}" \
+  -e USE_KEYWORD_AUGMENTATION="${USE_KEYWORD_AUGMENTATION:-false}" \
   -v "${HOME}/.config/gcloud:/root/.config/gcloud:ro" \
   "${IMAGE}"
